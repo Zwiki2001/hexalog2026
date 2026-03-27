@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bordless &mdash; Premium European Logistics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="logo">
+        <span class="logo-mark">B</span>
+        <span class="logo-text">BORDLESS</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#why-us">Why Us</a></li>
+        <li><a href="#coverage">Coverage</a></li>
+        <li><a href="#calculator">Rate Calculator</a></li>
+        <li><a href="#rates">Pricing</a></li>
+        <li><a href="#contact" class="nav-cta">Get a Quote</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#services">Services</a>
+    <a href="#why-us">Why Us</a>
+    <a href="#coverage">Coverage</a>
+    <a href="#calculator">Rate Calculator</a>
+    <a href="#rates">Pricing</a>
+    <a href="#contact">Get a Quote</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-inner">
+      <div class="hero-content" id="heroContent">
+        <p class="hero-eyebrow">Premium European Freight &amp; Logistics</p>
+        <h1 class="hero-title">
+          Freight without<br /><span class="hero-accent">Borders.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Unmatched rates across Europe for businesses that demand the best.
+          From Amsterdam to Athens — your cargo, our priority.
+        </p>
+        <div class="hero-actions">
+          <a href="#contact" class="btn-primary">Get Your Free Quote</a>
+          <a href="#services" class="btn-outline">Explore Services</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-num">40+</span>
+            <span class="stat-label">Countries Covered</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">98%</span>
+            <span class="stat-label">On-Time Delivery</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-num">500+</span>
+            <span class="stat-label">Corporate Clients</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-truck" id="scrollTruck">
+      <div class="truck-label">Scroll</div>
+      <svg class="truck-svg" viewBox="0 0 120 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Trailer body -->
+        <rect x="2" y="10" width="72" height="32" rx="2" fill="#1C2340" stroke="#D4AF37" stroke-width="1.5"/>
+        <!-- Trailer door lines -->
+        <line x1="38" y1="11" x2="38" y2="41" stroke="#D4AF37" stroke-width="0.8" stroke-dasharray="2 2"/>
+        <line x1="52" y1="11" x2="52" y2="41" stroke="#D4AF37" stroke-width="0.8" stroke-dasharray="2 2"/>
+        <!-- Bordless text on trailer -->
+        <text x="18" y="29" font-size="7" fill="#D4AF37" font-family="Inter,sans-serif" font-weight="600" letter-spacing="1">BORDLESS</text>
+        <!-- Cab body -->
+        <rect x="74" y="18" width="34" height="24" rx="2" fill="#141929" stroke="#D4AF37" stroke-width="1.5"/>
+        <!-- Cab roof -->
+        <path d="M74 18 L82 10 L104 10 L108 18 Z" fill="#141929" stroke="#D4AF37" stroke-width="1.5"/>
+        <!-- Windshield -->
+        <path d="M82 11 L83 18 L104 18 L104 11 Z" fill="#0A1030" stroke="#D4AF37" stroke-width="0.8" opacity="0.8"/>
+        <!-- Exhaust pipe -->
+        <rect x="104" y="6" width="3" height="12" rx="1" fill="#D4AF37"/>
+        <!-- Exhaust smoke puffs -->
+        <circle class="smoke-1" cx="107" cy="4" r="2" fill="#D4AF37" opacity="0.6"/>
+        <circle class="smoke-2" cx="109" cy="2" r="1.5" fill="#D4AF37" opacity="0.4"/>
+        <circle class="smoke-3" cx="111" cy="0.5" r="1" fill="#D4AF37" opacity="0.2"/>
+        <!-- Connector between cab and trailer -->
+        <rect x="72" y="30" width="4" height="6" rx="1" fill="#D4AF37"/>
+        <!-- Undercarriage -->
+        <rect x="4" y="41" width="108" height="4" rx="1" fill="#0D1224" stroke="#D4AF37" stroke-width="0.8"/>
+        <!-- Front bumper -->
+        <rect x="106" y="36" width="6" height="6" rx="1" fill="#D4AF37"/>
+        <!-- Headlight -->
+        <rect x="110" y="25" width="4" height="5" rx="1" fill="#F0D060" opacity="0.9"/>
+        <!-- Wheel axle lines -->
+        <line x1="20" y1="43" x2="20" y2="47" stroke="#D4AF37" stroke-width="1"/>
+        <line x1="50" y1="43" x2="50" y2="47" stroke="#D4AF37" stroke-width="1"/>
+        <line x1="88" y1="43" x2="88" y2="47" stroke="#D4AF37" stroke-width="1"/>
+        <!-- Wheels (groups for rotation) -->
+        <g class="wheel" style="transform-origin:20px 51px">
+          <circle cx="20" cy="51" r="8" fill="#0A0E1A" stroke="#D4AF37" stroke-width="1.8"/>
+          <circle cx="20" cy="51" r="3" fill="#D4AF37"/>
+          <line x1="20" y1="43.5" x2="20" y2="58.5" stroke="#D4AF37" stroke-width="1"/>
+          <line x1="12.5" y1="51" x2="27.5" y2="51" stroke="#D4AF37" stroke-width="1"/>
+          <line x1="14.5" y1="45.5" x2="25.5" y2="56.5" stroke="#D4AF37" stroke-width="0.7"/>
+          <line x1="25.5" y1="45.5" x2="14.5" y2="56.5" stroke="#D4AF37" stroke-width="0.7"/>
+        </g>
+        <g class="wheel" style="transform-origin:50px 51px">
+          <circle cx="50" cy="51" r="8" fill="#0A0E1A" stroke="#D4AF37" stroke-width="1.8"/>
+          <circle cx="50" cy="51" r="3" fill="#D4AF37"/>
+          <line x1="50" y1="43.5" x2="50" y2="58.5" stroke="#D4AF37" stroke-width="1"/>
+          <line x1="42.5" y1="51" x2="57.5" y2="51" stroke="#D4AF37" stroke-width="1"/>
+          <line x1="44.5" y1="45.5" x2="55.5" y2="56.5" stroke="#D4AF37" stroke-width="0.7"/>
+          <line x1="55.5" y1="45.5" x2="44.5" y2="56.5" stroke="#D4AF37" stroke-width="0.7"/>
+        </g>
+        <g class="wheel" style="transform-origin:88px 51px">
+          <circle cx="88" cy="51" r="8" fill="#0A0E1A" stroke="#D4AF37" stroke-width="1.8"/>
+          <circle cx="88" cy="51" r="3" fill="#D4AF37"/>
+          <line x1="88" y1="43.5" x2="88" y2="58.5" stroke="#D4AF37" stroke-width="1"/>
+          <line x1="80.5" y1="51" x2="95.5" y2="51" stroke="#D4AF37" stroke-width="1"/>
+          <line x1="82.5" y1="45.5" x2="93.5" y2="56.5" stroke="#D4AF37" stroke-width="0.7"/>
+          <line x1="93.5" y1="45.5" x2="82.5" y2="56.5" stroke="#D4AF37" stroke-width="0.7"/>
+        </g>
+        <!-- Road line -->
+        <line x1="0" y1="59" x2="120" y2="59" stroke="#D4AF37" stroke-width="0.5" opacity="0.3"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- MARQUEE STRIP -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <span>Full Truckload (FTL)</span><span class="dot">&bull;</span>
+      <span>Less Than Truckload (LTL)</span><span class="dot">&bull;</span>
+      <span>Express Delivery</span><span class="dot">&bull;</span>
+      <span>Refrigerated Cargo</span><span class="dot">&bull;</span>
+      <span>Hazardous Goods</span><span class="dot">&bull;</span>
+      <span>Cross-Docking</span><span class="dot">&bull;</span>
+      <span>Customs Clearance</span><span class="dot">&bull;</span>
+      <span>Real-Time Tracking</span><span class="dot">&bull;</span>
+      <span>Full Truckload (FTL)</span><span class="dot">&bull;</span>
+      <span>Less Than Truckload (LTL)</span><span class="dot">&bull;</span>
+      <span>Express Delivery</span><span class="dot">&bull;</span>
+      <span>Refrigerated Cargo</span><span class="dot">&bull;</span>
+      <span>Hazardous Goods</span><span class="dot">&bull;</span>
+      <span>Cross-Docking</span><span class="dot">&bull;</span>
+      <span>Customs Clearance</span><span class="dot">&bull;</span>
+      <span>Real-Time Tracking</span><span class="dot">&bull;</span>
+    </div>
+  </div>
+
+  <!-- SERVICES -->
+  <section class="section" id="services">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">What We Offer</p>
+        <h2 class="section-title">Tailored Logistics Solutions</h2>
+        <p class="section-sub">Every shipment is unique. We craft bespoke freight solutions that match your exact business needs and budget.</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card" data-aos>
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l4 4v8a2 2 0 0 1-2 2h-1"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M9 17h9"/></svg>
+          </div>
+          <h3>Full Truckload (FTL)</h3>
+          <p>Dedicated trucks exclusively for your cargo. Maximum security, speed, and cost efficiency for large shipments across Europe.</p>
+          <a href="#contact" class="service-link">Request FTL Quote &rarr;</a>
+        </div>
+        <div class="service-card" data-aos>
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+          </div>
+          <h3>Less Than Truckload (LTL)</h3>
+          <p>Share capacity, reduce cost. Ideal for smaller shipments without compromising on transit times or reliability.</p>
+          <a href="#contact" class="service-link">Request LTL Quote &rarr;</a>
+        </div>
+        <div class="service-card" data-aos>
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>Express &amp; Time-Critical</h3>
+          <p>When every hour counts. Our express network guarantees same-day or next-day delivery to key European hubs.</p>
+          <a href="#contact" class="service-link">Request Express Quote &rarr;</a>
+        </div>
+        <div class="service-card" data-aos>
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 9V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"/><path d="M2 13v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="13" x2="22" y2="13"/></svg>
+          </div>
+          <h3>Temperature-Controlled</h3>
+          <p>Pharmaceuticals, food, and sensitive goods transported in state-of-the-art refrigerated vehicles with real-time monitoring.</p>
+          <a href="#contact" class="service-link">Request Cold Chain Quote &rarr;</a>
+        </div>
+        <div class="service-card" data-aos>
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>Customs &amp; Compliance</h3>
+          <p>Post-Brexit and cross-border expertise. We handle all documentation, duties, and regulatory requirements seamlessly.</p>
+          <a href="#contact" class="service-link">Learn More &rarr;</a>
+        </div>
+        <div class="service-card" data-aos>
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h3>Real-Time Tracking</h3>
+          <p>Full visibility into your supply chain. Track every shipment live through our premium client portal, 24/7.</p>
+          <a href="#contact" class="service-link">Learn More &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="section section-dark" id="why-us">
+    <div class="container">
+      <div class="why-grid">
+        <div class="why-left">
+          <p class="section-eyebrow light">Why Bordless</p>
+          <h2 class="section-title light">The Premium Difference</h2>
+          <p class="section-sub light">We don't just move freight — we deliver certainty. Built for enterprises that can't afford mistakes.</p>
+          <a href="#contact" class="btn-primary mt-32">Partner with Us</a>
+        </div>
+        <div class="why-right">
+          <div class="why-item" data-aos>
+            <div class="why-num">01</div>
+            <div class="why-content">
+              <h4>Industry-Leading Rates</h4>
+              <p>Our pan-European network gives you access to negotiated carrier rates that significantly reduce your freight spend without compromising quality.</p>
+            </div>
+          </div>
+          <div class="why-item" data-aos>
+            <div class="why-num">02</div>
+            <div class="why-content">
+              <h4>Dedicated Account Manager</h4>
+              <p>Every enterprise client receives a single point of contact — available around the clock to manage your logistics needs proactively.</p>
+            </div>
+          </div>
+          <div class="why-item" data-aos>
+            <div class="why-num">03</div>
+            <div class="why-content">
+              <h4>Zero Compromise on Reliability</h4>
+              <p>With a 98% on-time delivery rate and contingency planning built into every route, your supply chain stays resilient.</p>
+            </div>
+          </div>
+          <div class="why-item" data-aos>
+            <div class="why-num">04</div>
+            <div class="why-content">
+              <h4>Sustainable Freight Options</h4>
+              <p>Choose from our green fleet options and carbon offset programs to meet your ESG commitments without sacrificing performance.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COVERAGE -->
+  <section class="section" id="coverage">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Pan-European Network</p>
+        <h2 class="section-title">Your Cargo, Anywhere in Europe</h2>
+        <p class="section-sub">Direct routes and partner networks spanning all major European markets — from the Nordic countries to the Mediterranean.</p>
+      </div>
+      <div class="coverage-grid">
+        <div class="coverage-map">
+          <div class="map-placeholder">
+            <svg viewBox="0 0 600 500" xmlns="http://www.w3.org/2000/svg" class="europe-svg">
+              <!-- Simplified Europe silhouette paths -->
+              <defs>
+                <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <!-- Grid lines -->
+              <g stroke="#D4AF3720" stroke-width="0.5">
+                <line x1="0" y1="100" x2="600" y2="100"/>
+                <line x1="0" y1="200" x2="600" y2="200"/>
+                <line x1="0" y1="300" x2="600" y2="300"/>
+                <line x1="0" y1="400" x2="600" y2="400"/>
+                <line x1="100" y1="0" x2="100" y2="500"/>
+                <line x1="200" y1="0" x2="200" y2="500"/>
+                <line x1="300" y1="0" x2="300" y2="500"/>
+                <line x1="400" y1="0" x2="400" y2="500"/>
+                <line x1="500" y1="0" x2="500" y2="500"/>
+              </g>
+              <!-- Route lines -->
+              <g stroke="#D4AF37" stroke-width="1" stroke-dasharray="4 4" opacity="0.6">
+                <line x1="200" y1="150" x2="300" y2="200"/>
+                <line x1="300" y1="200" x2="400" y2="180"/>
+                <line x1="300" y1="200" x2="350" y2="280"/>
+                <line x1="300" y1="200" x2="200" y2="300"/>
+                <line x1="350" y1="280" x2="280" y2="350"/>
+                <line x1="400" y1="180" x2="450" y2="250"/>
+                <line x1="200" y1="300" x2="150" y2="380"/>
+              </g>
+              <!-- City dots -->
+              <g fill="#D4AF37">
+                <!-- Amsterdam -->
+                <circle cx="270" cy="155" r="6" opacity="0.9"/>
+                <circle cx="270" cy="155" r="14" fill="url(#glow)"/>
+                <!-- Paris -->
+                <circle cx="255" cy="210" r="5" opacity="0.9"/>
+                <circle cx="255" cy="210" r="12" fill="url(#glow)"/>
+                <!-- Berlin -->
+                <circle cx="330" cy="165" r="5" opacity="0.9"/>
+                <!-- Madrid -->
+                <circle cx="205" cy="305" r="5" opacity="0.9"/>
+                <!-- Rome -->
+                <circle cx="340" cy="295" r="5" opacity="0.9"/>
+                <!-- Warsaw -->
+                <circle cx="390" cy="175" r="5" opacity="0.9"/>
+                <!-- Vienna -->
+                <circle cx="360" cy="225" r="5" opacity="0.9"/>
+                <!-- Brussels -->
+                <circle cx="267" cy="183" r="4" opacity="0.8"/>
+                <!-- Stockholm -->
+                <circle cx="330" cy="110" r="4" opacity="0.8"/>
+                <!-- Lisbon -->
+                <circle cx="165" cy="305" r="4" opacity="0.8"/>
+                <!-- Athens -->
+                <circle cx="390" cy="355" r="4" opacity="0.8"/>
+              </g>
+              <!-- City labels -->
+              <g fill="#F5F0E8" font-size="11" font-family="Inter, sans-serif" opacity="0.85">
+                <text x="282" y="152">Amsterdam</text>
+                <text x="262" y="226">Paris</text>
+                <text x="337" y="161">Berlin</text>
+                <text x="212" y="322">Madrid</text>
+                <text x="347" y="311">Rome</text>
+                <text x="397" y="171">Warsaw</text>
+                <text x="367" y="221">Vienna</text>
+                <text x="274" y="200">Brussels</text>
+                <text x="337" y="106">Stockholm</text>
+                <text x="125" y="316">Lisbon</text>
+                <text x="398" y="352">Athens</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+        <div class="coverage-list">
+          <div class="coverage-region" data-aos>
+            <div class="region-flag">NL</div>
+            <div>
+              <strong>Benelux Hub</strong>
+              <p>Netherlands, Belgium, Luxembourg — our operational heartland</p>
+            </div>
+          </div>
+          <div class="coverage-region" data-aos>
+            <div class="region-flag">DE</div>
+            <div>
+              <strong>DACH Region</strong>
+              <p>Germany, Austria, Switzerland — Europe's economic powerhouse</p>
+            </div>
+          </div>
+          <div class="coverage-region" data-aos>
+            <div class="region-flag">FR</div>
+            <div>
+              <strong>Western Europe</strong>
+              <p>France, Spain, Portugal, Italy — comprehensive coverage</p>
+            </div>
+          </div>
+          <div class="coverage-region" data-aos>
+            <div class="region-flag">PL</div>
+            <div>
+              <strong>Eastern Europe</strong>
+              <p>Poland, Czech Republic, Hungary and fast-growing markets</p>
+            </div>
+          </div>
+          <div class="coverage-region" data-aos>
+            <div class="region-flag">SE</div>
+            <div>
+              <strong>Nordic Countries</strong>
+              <p>Sweden, Norway, Denmark, Finland — specialized cold routes</p>
+            </div>
+          </div>
+          <div class="coverage-region" data-aos>
+            <div class="region-flag">GR</div>
+            <div>
+              <strong>Mediterranean</strong>
+              <p>Greece, Croatia, Bulgaria — expanding Southern network</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RATE CALCULATOR -->
+  <section class="section section-dark" id="calculator">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Instant Rate Tool</p>
+        <h2 class="section-title">Pallet Rate Calculator</h2>
+        <p class="section-sub">Select your route, pallet type, and weight to get an instant freight estimate.</p>
+      </div>
+      <div class="calc-wrapper">
+        <div class="calc-form">
+
+          <!-- STEP 1: ROUTE -->
+          <div class="calc-step">
+            <div class="calc-step-label"><span class="calc-step-num">1</span> Select Route</div>
+            <div class="calc-route-row">
+              <div class="form-group">
+                <label for="calc-origin">Origin Country</label>
+                <select id="calc-origin">
+                  <option value="NL">Netherlands (NL)</option>
+                  <option value="BE">Belgium (BE)</option>
+                  <option value="DE">Germany (DE)</option>
+                  <option value="FR">France (FR)</option>
+                  <option value="PL">Poland (PL)</option>
+                  <option value="ES">Spain (ES)</option>
+                  <option value="IT">Italy (IT)</option>
+                  <option value="SE">Sweden (SE)</option>
+                </select>
+              </div>
+              <div class="calc-arrow">&#8594;</div>
+              <div class="form-group">
+                <label for="calc-dest">Destination Country</label>
+                <select id="calc-dest">
+                  <option value="FR">France (FR)</option>
+                  <option value="DE">Germany (DE)</option>
+                  <option value="BE">Belgium (BE)</option>
+                  <option value="NL">Netherlands (NL)</option>
+                  <option value="ES">Spain (ES)</option>
+                  <option value="IT">Italy (IT)</option>
+                  <option value="PL">Poland (PL)</option>
+                  <option value="SE">Sweden (SE)</option>
+                  <option value="PT">Portugal (PT)</option>
+                  <option value="AT">Austria (AT)</option>
+                  <option value="CH">Switzerland (CH)</option>
+                  <option value="CZ">Czech Republic (CZ)</option>
+                  <option value="HU">Hungary (HU)</option>
+                  <option value="RO">Romania (RO)</option>
+                  <option value="GR">Greece (GR)</option>
+                  <option value="DK">Denmark (DK)</option>
+                  <option value="NO">Norway (NO)</option>
+                  <option value="FI">Finland (FI)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: PALLET TYPE -->
+          <div class="calc-step">
+            <div class="calc-step-label"><span class="calc-step-num">2</span> Pallet Type &amp; Dimensions</div>
+            <div class="pallet-type-grid">
+              <label class="pallet-option">
+                <input type="radio" name="palletType" value="euro" checked />
+                <div class="pallet-card">
+                  <div class="pallet-icon">
+                    <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="30" width="36" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="6" y="20" width="36" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="8" y="12" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/><rect x="20" y="12" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/><rect x="32" y="12" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+                  </div>
+                  <strong>Euro Pallet</strong>
+                  <span>120 &times; 80 cm</span>
+                  <span class="pallet-max">Max 1,000 kg</span>
+                </div>
+              </label>
+              <label class="pallet-option">
+                <input type="radio" name="palletType" value="industrial" />
+                <div class="pallet-card">
+                  <div class="pallet-icon">
+                    <svg viewBox="0 0 48 48" fill="none"><rect x="4" y="30" width="40" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="4" y="20" width="40" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="6" y="12" width="10" height="8" rx="1" stroke="currentColor" stroke-width="2"/><rect x="19" y="12" width="10" height="8" rx="1" stroke="currentColor" stroke-width="2"/><rect x="32" y="12" width="10" height="8" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+                  </div>
+                  <strong>Industrial Pallet</strong>
+                  <span>120 &times; 100 cm</span>
+                  <span class="pallet-max">Max 1,500 kg</span>
+                </div>
+              </label>
+              <label class="pallet-option">
+                <input type="radio" name="palletType" value="half" />
+                <div class="pallet-card">
+                  <div class="pallet-icon">
+                    <svg viewBox="0 0 48 48" fill="none"><rect x="10" y="30" width="28" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="10" y="20" width="28" height="6" rx="1" stroke="currentColor" stroke-width="2"/><rect x="12" y="12" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/><rect x="28" y="12" width="8" height="8" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+                  </div>
+                  <strong>Half Pallet</strong>
+                  <span>80 &times; 60 cm</span>
+                  <span class="pallet-max">Max 500 kg</span>
+                </div>
+              </label>
+              <label class="pallet-option">
+                <input type="radio" name="palletType" value="custom" />
+                <div class="pallet-card">
+                  <div class="pallet-icon">
+                    <svg viewBox="0 0 48 48" fill="none"><path d="M24 8v32M8 24h32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="8" y="8" width="32" height="32" rx="2" stroke="currentColor" stroke-width="2"/></svg>
+                  </div>
+                  <strong>Custom Size</strong>
+                  <span>Enter manually</span>
+                  <span class="pallet-max">Any dimensions</span>
+                </div>
+              </label>
+            </div>
+            <div class="custom-dims" id="customDims">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="calc-length">Length (cm)</label>
+                  <input type="number" id="calc-length" placeholder="e.g. 120" min="1" />
+                </div>
+                <div class="form-group">
+                  <label for="calc-width">Width (cm)</label>
+                  <input type="number" id="calc-width" placeholder="e.g. 80" min="1" />
+                </div>
+                <div class="form-group">
+                  <label for="calc-height">Height (cm)</label>
+                  <input type="number" id="calc-height" placeholder="e.g. 160" min="1" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: WEIGHT & QUANTITY -->
+          <div class="calc-step">
+            <div class="calc-step-label"><span class="calc-step-num">3</span> Weight &amp; Quantity</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="calc-weight">Weight per Pallet (kg)</label>
+                <input type="number" id="calc-weight" placeholder="e.g. 400" min="1" max="2000" />
+              </div>
+              <div class="form-group">
+                <label for="calc-qty">Number of Pallets</label>
+                <input type="number" id="calc-qty" placeholder="e.g. 5" min="1" max="33" value="1" />
+              </div>
+            </div>
+            <div class="weight-slider-wrap">
+              <label class="slider-label">Weight per pallet: <span id="sliderVal">400</span> kg</label>
+              <input type="range" id="weightSlider" min="1" max="2000" value="400" class="weight-slider" />
+              <div class="slider-scale">
+                <span>1 kg</span><span>500 kg</span><span>1,000 kg</span><span>1,500 kg</span><span>2,000 kg</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary btn-full calc-btn" id="calcBtn">Calculate Rates &rarr;</button>
+        </div>
+
+        <!-- RESULTS PANEL -->
+        <div class="calc-result" id="calcResult">
+          <div class="result-placeholder" id="resultPlaceholder">
+            <div class="result-placeholder-icon">
+              <svg viewBox="0 0 64 64" fill="none"><path d="M32 8L8 20v24l24 12 24-12V20L32 8z" stroke="currentColor" stroke-width="2"/><path d="M32 8v36M8 20l24 12 24-12" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <p>Fill in the route, pallet type, and weight then click <strong>Calculate Rates</strong> to see your instant freight estimate.</p>
+          </div>
+          <div class="result-content" id="resultContent" style="display:none">
+            <div class="result-header">
+              <div class="result-route" id="resultRoute"></div>
+              <div class="result-badge">Instant Estimate</div>
+            </div>
+            <div class="result-breakdown" id="resultBreakdown"></div>
+            <div class="result-total" id="resultTotal"></div>
+            <div class="result-note">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="9"/><path d="M10 9v5M10 7h.01"/></svg>
+              Rates shown are estimates. Final pricing may vary based on exact route, access conditions, and fuel surcharge. Contact us for a confirmed quote.
+            </div>
+            <a href="#contact" class="btn-primary btn-full" style="margin-top:20px">Confirm This Quote &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RATES / PRICING TEASER -->
+  <section class="section section-gold" id="rates">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow dark">Transparent Pricing</p>
+        <h2 class="section-title dark">Rates Built for Scale</h2>
+        <p class="section-sub dark">The larger your volume, the more you save. Our tiered pricing model rewards long-term partnerships.</p>
+      </div>
+      <div class="rates-grid">
+        <div class="rate-card" data-aos>
+          <div class="rate-tier">Starter</div>
+          <div class="rate-volume">Up to 10 shipments/month</div>
+          <ul class="rate-features">
+            <li>Standard FTL &amp; LTL access</li>
+            <li>Online tracking portal</li>
+            <li>Email support</li>
+            <li>Standard transit times</li>
+          </ul>
+          <a href="#contact" class="btn-outline-dark">Get Quote</a>
+        </div>
+        <div class="rate-card rate-featured" data-aos>
+          <div class="rate-badge">Most Popular</div>
+          <div class="rate-tier">Business</div>
+          <div class="rate-volume">10 – 100 shipments/month</div>
+          <ul class="rate-features">
+            <li>Priority route allocation</li>
+            <li>Dedicated account manager</li>
+            <li>Express options included</li>
+            <li>Custom reporting dashboard</li>
+            <li>Preferential rates up to 25% off</li>
+          </ul>
+          <a href="#contact" class="btn-primary">Get Quote</a>
+        </div>
+        <div class="rate-card" data-aos>
+          <div class="rate-tier">Enterprise</div>
+          <div class="rate-volume">100+ shipments/month</div>
+          <ul class="rate-features">
+            <li>Fully bespoke contract rates</li>
+            <li>Dedicated fleet options</li>
+            <li>24/7 operations support</li>
+            <li>API integration</li>
+            <li>Carbon offset program</li>
+          </ul>
+          <a href="#contact" class="btn-outline-dark">Contact Sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section" id="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Client Voices</p>
+        <h2 class="section-title">Trusted by Industry Leaders</h2>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card" data-aos>
+          <div class="quote-mark">&ldquo;</div>
+          <p>Bordless reduced our cross-European freight costs by 30% while improving delivery reliability. Their team is genuinely exceptional.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">JM</div>
+            <div>
+              <strong>Jan Müller</strong>
+              <span>Head of Supply Chain, AutoParts GmbH</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card" data-aos>
+          <div class="quote-mark">&ldquo;</div>
+          <p>We've worked with many logistics providers, but none match Bordless's combination of premium service and competitive pricing. Truly world-class.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">SV</div>
+            <div>
+              <strong>Sophie Vermeer</strong>
+              <span>COO, Nordic Foods International</span>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card" data-aos>
+          <div class="quote-mark">&ldquo;</div>
+          <p>From our first shipment, the professionalism was clear. Real-time tracking, proactive communication — this is how logistics should work.</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">RP</div>
+            <div>
+              <strong>Rafal Piotrowski</strong>
+              <span>Director of Logistics, TechManufact PL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="section section-dark" id="contact">
+    <div class="container">
+      <div class="contact-grid">
+        <div class="contact-left">
+          <p class="section-eyebrow light">Get In Touch</p>
+          <h2 class="section-title light">Ready for Premium Logistics?</h2>
+          <p class="section-sub light">Tell us about your shipment requirements and one of our logistics specialists will respond within 2 business hours.</p>
+          <div class="contact-info">
+            <div class="contact-info-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6.08 6.08l1.14-.95a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span>+31 (0)20 123 4567</span>
+            </div>
+            <div class="contact-info-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <span>info@bordless.eu</span>
+            </div>
+            <div class="contact-info-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Schiphol Boulevard 127, Amsterdam, Netherlands</span>
+            </div>
+          </div>
+        </div>
+        <div class="contact-right">
+          <form class="contact-form" id="contactForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" placeholder="Your full name" required />
+              </div>
+              <div class="form-group">
+                <label for="company">Company</label>
+                <input type="text" id="company" placeholder="Company name" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="email">Business Email</label>
+                <input type="email" id="email" placeholder="you@company.com" required />
+              </div>
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" placeholder="+31 ..." />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="service">Service Required</label>
+              <select id="service">
+                <option value="">Select a service...</option>
+                <option>Full Truckload (FTL)</option>
+                <option>Less Than Truckload (LTL)</option>
+                <option>Express Delivery</option>
+                <option>Temperature-Controlled</option>
+                <option>Customs &amp; Compliance</option>
+                <option>Other / Multiple Services</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="message">Tell us about your requirements</label>
+              <textarea id="message" rows="4" placeholder="Routes, volume, frequency, special requirements..."></textarea>
+            </div>
+            <button type="submit" class="btn-primary btn-full">Send Request &rarr;</button>
+            <p class="form-note">We respond within 2 business hours. No commitment required.</p>
+          </form>
+          <div class="form-success" id="formSuccess">
+            <div class="success-icon">&#10003;</div>
+            <h3>Message Received!</h3>
+            <p>A logistics specialist will contact you within 2 business hours.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="#" class="logo">
+            <span class="logo-mark">B</span>
+            <span class="logo-text">BORDLESS</span>
+          </a>
+          <p>Premium European freight and logistics solutions for businesses that demand the best rates and service.</p>
+        </div>
+        <div class="footer-links-group">
+          <strong>Services</strong>
+          <a href="#services">Full Truckload (FTL)</a>
+          <a href="#services">Less Than Truckload (LTL)</a>
+          <a href="#services">Express Delivery</a>
+          <a href="#services">Cold Chain Logistics</a>
+          <a href="#services">Customs Clearance</a>
+        </div>
+        <div class="footer-links-group">
+          <strong>Company</strong>
+          <a href="#why-us">Why Bordless</a>
+          <a href="#coverage">Our Coverage</a>
+          <a href="#rates">Pricing</a>
+          <a href="#contact">Contact Us</a>
+        </div>
+        <div class="footer-links-group">
+          <strong>Contact</strong>
+          <a href="tel:+31201234567">+31 (0)20 123 4567</a>
+          <a href="mailto:info@bordless.eu">info@bordless.eu</a>
+          <span>Amsterdam, Netherlands</span>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Bordless B.V. All rights reserved.</p>
+        <div class="footer-legal">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookie Policy</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/main.js"></script>
+</body>
+</html>
