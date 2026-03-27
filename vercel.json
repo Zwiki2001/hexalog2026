@@ -1,0 +1,11 @@
+{
+  "outputDirectory": "hexalog",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "routes": [
+    { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/portal", "dest": "/portal.html" },
+    { "src": "/coming-soon", "dest": "/coming-soon.html" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
