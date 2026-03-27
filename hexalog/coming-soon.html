@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>HexaLog — Coming Soon</title>
+  <meta name="description" content="HexaLog — Benelux & France logistics specialists. Launching 01-01-2027."/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --blue:#1A3F8F;--blue2:#0d2660;--gold:#F5A623;--gold2:#FFB940;
+      --teal:#00D4AA;--white:#E4EAFF;--dim:#8094B8;--dark:#070D1A;
+    }
+    html,body{height:100%;width:100%;overflow-x:hidden;overflow-y:auto}
+    body{
+      font-family:'Inter',sans-serif;
+      background:var(--dark);
+      color:var(--white);
+      min-height:100vh;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      position:relative;
+    }
+
+    /* ── Animated hex grid background ── */
+    canvas#bg{position:fixed;inset:0;z-index:0;opacity:.18}
+
+    /* ── Radial glow ── */
+    .glow-orb{
+      position:fixed;width:700px;height:700px;border-radius:50%;
+      background:radial-gradient(circle,rgba(26,63,143,.55) 0%,transparent 70%);
+      top:50%;left:50%;transform:translate(-50%,-50%);
+      z-index:0;pointer-events:none;
+      animation:pulse 6s ease-in-out infinite;
+    }
+    .glow-orb2{
+      position:fixed;width:400px;height:400px;border-radius:50%;
+      background:radial-gradient(circle,rgba(245,166,35,.18) 0%,transparent 70%);
+      bottom:-100px;right:-100px;z-index:0;pointer-events:none;
+      animation:pulse 8s ease-in-out infinite reverse;
+    }
+    @keyframes pulse{0%,100%{opacity:.7;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}
+
+    /* ── Main card ── */
+    .card{
+      position:relative;z-index:1;
+      max-width:760px;width:100%;
+      padding:60px 48px;
+      text-align:center;
+    }
+
+    /* ── Logo / brand ── */
+    .brand{
+      display:inline-flex;align-items:center;gap:12px;
+      margin-bottom:48px;
+    }
+    .brand-hex{
+      width:52px;height:52px;
+      background:linear-gradient(135deg,var(--blue),#2d5cc8);
+      clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.1rem;
+      color:#fff;letter-spacing:-.5px;
+      box-shadow:0 0 32px rgba(26,63,143,.6);
+      animation:hexSpin 12s linear infinite;
+    }
+    @keyframes hexSpin{0%{box-shadow:0 0 32px rgba(26,63,143,.6)}50%{box-shadow:0 0 48px rgba(245,166,35,.5)}100%{box-shadow:0 0 32px rgba(26,63,143,.6)}}
+    .brand-name{
+      font-family:'Space Grotesk',sans-serif;
+      font-size:2rem;font-weight:800;letter-spacing:-.5px;
+      background:linear-gradient(135deg,#E4EAFF,var(--gold));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+
+    /* ── Badge ── */
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);
+      color:var(--teal);border-radius:100px;
+      padding:7px 18px;font-size:.78rem;font-weight:600;letter-spacing:.06em;
+      text-transform:uppercase;margin-bottom:28px;
+    }
+    .badge-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:blink 1.4s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+    /* ── Headline ── */
+    h1{
+      font-family:'Space Grotesk',sans-serif;
+      font-size:clamp(2.2rem,6vw,3.8rem);
+      font-weight:800;line-height:1.1;
+      letter-spacing:-.03em;
+      margin-bottom:20px;
+    }
+    h1 .line1{color:var(--white)}
+    h1 .line2{
+      background:linear-gradient(90deg,var(--gold),var(--teal));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+    .sub{
+      font-size:1.05rem;color:var(--dim);line-height:1.7;
+      max-width:500px;margin:0 auto 52px;
+    }
+
+    /* ── Countdown ── */
+    .countdown{
+      display:flex;justify-content:center;gap:16px;
+      flex-wrap:wrap;margin-bottom:56px;
+    }
+    .cd-block{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(26,63,143,.35);
+      border-radius:16px;padding:20px 24px;min-width:100px;
+      position:relative;overflow:hidden;
+      transition:border-color .3s,box-shadow .3s;
+    }
+    .cd-block:hover{border-color:rgba(245,166,35,.4);box-shadow:0 0 24px rgba(245,166,35,.12)}
+    .cd-block::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(26,63,143,.15),transparent);
+      pointer-events:none;
+    }
+    .cd-num{
+      font-family:'Space Grotesk',sans-serif;
+      font-size:clamp(2rem,6vw,3rem);
+      font-weight:800;line-height:1;
+      color:var(--white);display:block;
+      transition:all .3s;
+    }
+    .cd-num.flip{animation:numFlip .35s ease}
+    @keyframes numFlip{0%{opacity:0;transform:translateY(-12px)}100%{opacity:1;transform:translateY(0)}}
+    .cd-lbl{
+      font-size:.7rem;font-weight:600;letter-spacing:.12em;
+      text-transform:uppercase;color:var(--dim);margin-top:6px;display:block;
+    }
+    .cd-sep{
+      display:flex;align-items:center;padding-bottom:28px;
+      font-size:2rem;font-weight:700;color:rgba(245,166,35,.4);
+    }
+
+    /* ── Launch date strip ── */
+    .launch-strip{
+      display:inline-flex;align-items:center;gap:10px;
+      background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);
+      border-radius:10px;padding:12px 20px;margin-bottom:52px;
+      font-size:.9rem;color:var(--gold2);font-weight:600;
+    }
+    .launch-strip svg{flex-shrink:0}
+
+    /* ── Email notify ── */
+    .notify-form{
+      display:flex;gap:10px;max-width:460px;margin:0 auto 48px;
+      flex-wrap:wrap;justify-content:center;
+    }
+    .notify-form input{
+      flex:1;min-width:220px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(26,63,143,.4);
+      border-radius:10px;padding:13px 18px;
+      color:var(--white);font-size:.9rem;font-family:'Inter',sans-serif;
+      outline:none;transition:border-color .2s,box-shadow .2s;
+    }
+    .notify-form input::placeholder{color:var(--dim)}
+    .notify-form input:focus{border-color:rgba(245,166,35,.5);box-shadow:0 0 0 3px rgba(245,166,35,.1)}
+    .notify-form button{
+      background:linear-gradient(135deg,var(--blue),#2d5cc8);
+      color:#fff;border:none;border-radius:10px;
+      padding:13px 24px;font-weight:700;font-size:.9rem;
+      font-family:'Space Grotesk',sans-serif;cursor:pointer;
+      white-space:nowrap;transition:all .2s;
+    }
+    .notify-form button:hover{background:linear-gradient(135deg,#2d5cc8,var(--blue));box-shadow:0 6px 20px rgba(26,63,143,.5);transform:translateY(-1px)}
+    .notify-success{
+      display:none;color:var(--teal);font-size:.88rem;font-weight:600;margin-top:-36px;margin-bottom:12px;
+    }
+
+    /* ── Services preview ── */
+    .services-row{
+      display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:48px;
+    }
+    .svc-tag{
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+      border-radius:100px;padding:8px 18px;font-size:.8rem;color:var(--dim);
+      display:flex;align-items:center;gap:7px;
+    }
+    .svc-tag span{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0}
+
+    /* ── Countries ── */
+    .countries{
+      display:flex;justify-content:center;gap:14px;flex-wrap:wrap;
+      margin-bottom:52px;
+    }
+    .ctry{
+      display:flex;align-items:center;gap:6px;
+      font-size:.85rem;color:var(--dim);font-weight:500;
+    }
+    .ctry-flag{font-size:1.3rem}
+
+    /* ── Portal link ── */
+    .portal-link{
+      display:inline-flex;align-items:center;gap:8px;
+      color:var(--dim);font-size:.85rem;
+      border-bottom:1px solid transparent;
+      transition:color .2s,border-color .2s;
+      text-decoration:none;margin-bottom:48px;
+    }
+    .portal-link:hover{color:var(--gold);border-color:rgba(245,166,35,.4)}
+
+    /* ── Footer ── */
+    .cs-footer{
+      color:#3D5080;font-size:.75rem;
+    }
+
+    /* ── Responsive ── */
+    @media(max-width:768px){
+      body{align-items:flex-start;justify-content:flex-start}
+      .card{padding:36px 20px 48px;max-width:100%;width:100%}
+      .brand{margin-bottom:32px}
+      .brand-hex{width:44px;height:44px;font-size:.95rem}
+      .brand-name{font-size:1.6rem}
+      .badge{font-size:.72rem;padding:6px 14px}
+      h1{font-size:clamp(1.9rem,7vw,2.6rem)}
+      .sub{font-size:.93rem;margin-bottom:36px}
+      .launch-strip{font-size:.82rem;padding:10px 14px;margin-bottom:36px;text-align:left}
+      .countdown{gap:8px;margin-bottom:36px}
+      .cd-block{padding:14px 10px;min-width:68px;border-radius:12px}
+      .cd-num{font-size:clamp(1.7rem,6vw,2.4rem)}
+      .cd-lbl{font-size:.62rem}
+      .cd-sep{display:none}
+      .notify-form{flex-direction:column;gap:8px;margin-bottom:36px}
+      .notify-form input,.notify-form button{width:100%;min-width:unset}
+      .notify-form input{font-size:.9rem;padding:12px 14px}
+      .notify-form button{padding:13px;font-size:.92rem}
+      .services-row{gap:7px;margin-bottom:36px}
+      .svc-tag{font-size:.75rem;padding:7px 12px}
+      .countries{gap:10px;margin-bottom:36px}
+      .ctry{font-size:.82rem}
+      .ctry-flag{font-size:1.1rem}
+      .portal-link{font-size:.82rem;margin-bottom:36px}
+      .cs-footer{font-size:.72rem}
+      .glow-orb{width:340px;height:340px}
+    }
+
+    @media(max-width:400px){
+      .card{padding:28px 16px 40px}
+      .brand-name{font-size:1.35rem}
+      .brand-hex{width:38px;height:38px;font-size:.82rem}
+      h1{font-size:1.7rem}
+      .cd-block{padding:12px 8px;min-width:60px}
+      .cd-num{font-size:1.5rem}
+      .countdown{gap:5px}
+      .launch-strip{font-size:.76rem}
+      .services-row{gap:5px}
+      .svc-tag{font-size:.7rem;padding:6px 10px}
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div class="glow-orb"></div>
+<div class="glow-orb2"></div>
+
+<div class="card">
+
+  <!-- Brand -->
+  <div class="brand">
+    <div class="brand-hex">HL</div>
+    <span class="brand-name">HexaLog</span>
+  </div>
+
+  <!-- Badge -->
+  <div class="badge">
+    <span class="badge-dot"></span>
+    Launching Soon
+  </div>
+
+  <!-- Headline -->
+  <h1>
+    <span class="line1">The Future of Benelux</span><br/>
+    <span class="line2">Logistics is Coming.</span>
+  </h1>
+  <p class="sub">We're building something great — the smartest, most transparent pallet logistics platform in Benelux &amp; France. Best rates. Real-time tracking. Six languages.</p>
+
+  <!-- Launch date -->
+  <div class="launch-strip">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Official launch: January 1, 2027
+  </div>
+
+  <!-- Countdown -->
+  <div class="countdown">
+    <div class="cd-block">
+      <span class="cd-num" id="cd-days">000</span>
+      <span class="cd-lbl">Days</span>
+    </div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block">
+      <span class="cd-num" id="cd-hours">00</span>
+      <span class="cd-lbl">Hours</span>
+    </div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block">
+      <span class="cd-num" id="cd-mins">00</span>
+      <span class="cd-lbl">Minutes</span>
+    </div>
+    <div class="cd-sep">:</div>
+    <div class="cd-block">
+      <span class="cd-num" id="cd-secs">00</span>
+      <span class="cd-lbl">Seconds</span>
+    </div>
+  </div>
+
+  <!-- Notify -->
+  <div class="notify-form" id="notifyForm">
+    <input type="email" id="notifyEmail" placeholder="Enter your email — get notified at launch"/>
+    <button onclick="submitNotify()">Notify Me</button>
+  </div>
+  <p class="notify-success" id="notifyOk">✓ You're on the list! We'll email you on launch day.</p>
+
+  <!-- Services -->
+  <div class="services-row">
+    <div class="svc-tag"><span></span>LTL Pallets</div>
+    <div class="svc-tag"><span></span>FTL Full Truck</div>
+    <div class="svc-tag"><span></span>Express 24h</div>
+    <div class="svc-tag"><span></span>Weekend Delivery</div>
+    <div class="svc-tag"><span></span>B2B &amp; B2C</div>
+    <div class="svc-tag"><span></span>Live Rate Calculator</div>
+  </div>
+
+  <!-- Countries -->
+  <div class="countries">
+    <div class="ctry"><span class="ctry-flag">🇧🇪</span>Belgium</div>
+    <div class="ctry"><span class="ctry-flag">🇳🇱</span>Netherlands</div>
+    <div class="ctry"><span class="ctry-flag">🇱🇺</span>Luxembourg</div>
+    <div class="ctry"><span class="ctry-flag">🇫🇷</span>France</div>
+  </div>
+
+  <!-- Already a client -->
+  <a href="portal.html" class="portal-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14L21 3M9 21H3V15"/></svg>
+    Already a client? Access your portal →
+  </a>
+
+  <p class="cs-footer">© 2026 HexaLog · info@hexalog.eu · Benelux &amp; France</p>
+
+</div>
+
+<script>
+// ── Countdown ──────────────────────────────────────────────
+var target = new Date('2027-01-01T00:00:00');
+var daysEl = document.getElementById('cd-days');
+var hoursEl = document.getElementById('cd-hours');
+var minsEl = document.getElementById('cd-mins');
+var secsEl = document.getElementById('cd-secs');
+
+function pad(n, len){ return String(n).padStart(len||2,'0'); }
+
+function flip(el, val){
+  if(el.textContent !== val){
+    el.textContent = val;
+    el.classList.remove('flip');
+    void el.offsetWidth;
+    el.classList.add('flip');
+  }
+}
+
+function tick(){
+  var now = new Date();
+  var diff = target - now;
+  if(diff <= 0){ diff = 0; }
+  var days  = Math.floor(diff / 86400000);
+  var hours = Math.floor((diff % 86400000) / 3600000);
+  var mins  = Math.floor((diff % 3600000)  / 60000);
+  var secs  = Math.floor((diff % 60000)    / 1000);
+  flip(daysEl,  pad(days, 3));
+  flip(hoursEl, pad(hours));
+  flip(minsEl,  pad(mins));
+  flip(secsEl,  pad(secs));
+}
+tick();
+setInterval(tick, 1000);
+
+// ── Supabase ───────────────────────────────────────────────
+var _sb = supabase.createClient(
+  'https://mjcuhyujqpzgybbqeaxd.supabase.co',
+  'sb_publishable_1DZMiEy3eonWMiWKy7B_dA_t0IhBff0'
+);
+
+// ── Notify ─────────────────────────────────────────────────
+async function submitNotify(){
+  var emailInput = document.getElementById('notifyEmail');
+  var btn = document.querySelector('.notify-form button');
+  var email = emailInput.value.trim();
+  if(!email || !email.includes('@')){ alert('Please enter a valid email address.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  var { error } = await _sb.from('waitlist').insert({ email: email });
+
+  btn.disabled = false;
+  btn.textContent = 'Notify Me';
+
+  if(error && error.code === '23505'){
+    // Already registered (unique constraint)
+    document.getElementById('notifyForm').style.display = 'none';
+    document.getElementById('notifyOk').textContent = '✓ You\'re already on the list! We\'ll email you on launch day.';
+    document.getElementById('notifyOk').style.display = 'block';
+    return;
+  }
+  if(error){
+    var msg = 'Something went wrong. Please try again.';
+    if(error.message) msg = error.message;
+    document.querySelector('.notify-form button').textContent = 'Try Again';
+    var errEl = document.getElementById('notifyErr');
+    if(!errEl){
+      errEl = document.createElement('p');
+      errEl.id = 'notifyErr';
+      errEl.style.cssText = 'color:#ff6b6b;font-size:.82rem;margin-top:8px;text-align:center';
+      document.getElementById('notifyForm').after(errEl);
+    }
+    errEl.textContent = '⚠ ' + msg;
+    return;
+  }
+
+  document.getElementById('notifyForm').style.display = 'none';
+  document.getElementById('notifyOk').style.display = 'block';
+}
+document.getElementById('notifyEmail').addEventListener('keydown', function(e){
+  if(e.key === 'Enter') submitNotify();
+});
+
+// ── Secret admin keyboard shortcut ────────────────────────
+(function(){
+  var secret = 'Zwiki2001';
+  var typed = '';
+  document.addEventListener('keydown', function(e){
+    var tag = document.activeElement ? document.activeElement.tagName : '';
+    if(tag === 'INPUT' || tag === 'TEXTAREA') return;
+    typed += e.key;
+    if(typed.length > secret.length) typed = typed.slice(-secret.length);
+    if(typed === secret){
+      window.location.href = 'admin.html';
+    }
+  });
+})();
+(function(){
+  var canvas = document.getElementById('bg');
+  var ctx = canvas.getContext('2d');
+  var HEX = 48, cols, rows, hexes = [];
+
+  function resize(){
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    build();
+  }
+
+  function build(){
+    hexes = [];
+    var w = HEX * 2;
+    var h = Math.sqrt(3) * HEX;
+    cols = Math.ceil(canvas.width  / (w * 0.75)) + 2;
+    rows = Math.ceil(canvas.height / h) + 2;
+    for(var c = 0; c < cols; c++){
+      for(var r = 0; r < rows; r++){
+        var x = c * w * 0.75;
+        var y = r * h + (c % 2 === 0 ? 0 : h / 2);
+        hexes.push({ x:x, y:y, alpha: Math.random() * 0.6, speed: 0.002 + Math.random() * 0.004, dir: Math.random() > 0.5 ? 1 : -1 });
+      }
+    }
+  }
+
+  function hexPath(x, y, r){
+    ctx.beginPath();
+    for(var i = 0; i < 6; i++){
+      var ang = Math.PI / 180 * (60 * i - 30);
+      var px  = x + r * Math.cos(ang);
+      var py  = y + r * Math.sin(ang);
+      if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hexes.forEach(function(h){
+      h.alpha += h.speed * h.dir;
+      if(h.alpha >= 0.6 || h.alpha <= 0) h.dir *= -1;
+      ctx.strokeStyle = 'rgba(26,63,143,' + h.alpha + ')';
+      ctx.lineWidth = 0.8;
+      hexPath(h.x, h.y, HEX - 2);
+      ctx.stroke();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  draw();
+})();
+</script>
+<!-- ── WhatsApp Float Button ── -->
+<style>.wa-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end}.wa-tip{background:rgba(5,10,22,.95);border:1px solid rgba(37,211,102,.4);border-radius:10px;padding:9px 14px;font-size:.78rem;font-weight:600;color:#E4EAFF;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(6px);transition:.3s;backdrop-filter:blur(12px);margin-bottom:10px;position:relative}.wa-tip::after{content:'';position:absolute;bottom:-6px;right:18px;width:10px;height:10px;background:rgba(5,10,22,.95);border-right:1px solid rgba(37,211,102,.4);border-bottom:1px solid rgba(37,211,102,.4);transform:rotate(45deg)}.wa-wrap.show .wa-tip{opacity:1;transform:translateY(0)}.wa-btn{display:flex;align-items:center;cursor:pointer;text-decoration:none;animation:wa-pop .5s cubic-bezier(.34,1.56,.64,1) 1.5s both}@keyframes wa-pop{from{opacity:0;transform:scale(0) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}.wa-inner{display:flex;align-items:center;gap:0;background:#25D366;border-radius:50px;box-shadow:0 4px 20px rgba(37,211,102,.45);overflow:hidden;transition:.3s}.wa-btn:hover .wa-inner{box-shadow:0 6px 28px rgba(37,211,102,.65)}.wa-icon{width:56px;height:56px;display:flex;align-items:center;justify-content:center}.wa-text{max-width:0;opacity:0;white-space:nowrap;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;color:#fff;padding-right:0;transition:max-width .35s,opacity .35s,padding .35s;overflow:hidden}.wa-btn:hover .wa-text{max-width:160px;opacity:1;padding-right:18px}@media(max-width:480px){.wa-icon{width:48px;height:48px}.wa-wrap{bottom:18px;right:18px}}</style>
+<div class="wa-wrap" id="wa-wrap"><div class="wa-tip">Need help? Chat on WhatsApp 💬</div><a class="wa-btn" href="https://wa.me/31612345678?text=Hello%20HexaLog%2C%20I%20need%20help%20with%20a%20shipment." target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><div class="wa-inner"><div class="wa-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></div><span class="wa-text">Chat with us</span></div></a></div>
+<script>(function(){var w=document.getElementById('wa-wrap');if(!w)return;setTimeout(function(){w.classList.add('show');},2000);setTimeout(function(){w.classList.remove('show');},5500);})();</script>
+</body>
+</html>

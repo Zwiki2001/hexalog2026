@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HexaLog — Client Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#070C18;color:#E4EAFF;min-height:100vh;line-height:1.6}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0B1220}::-webkit-scrollbar-thumb{background:#1A3F8F;border-radius:3px}
+a{text-decoration:none;color:inherit}
+input,textarea,button,select{font-family:inherit}
+
+/* NAV */
+nav{background:rgba(7,12,24,.97);border-bottom:1px solid rgba(26,63,143,.3);padding:0 24px;height:66px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:-.02em;background:linear-gradient(135deg,#4A9EFF,#2E6ADB,#F5A623);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#F5A623;box-shadow:0 0 8px #F5A623;margin-left:2px;vertical-align:middle;position:relative;top:-3px}
+.nav-tag{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8094B8;background:rgba(26,63,143,.15);border:1px solid rgba(26,63,143,.3);padding:4px 12px;border-radius:99px}
+.nav-right-links{display:flex;align-items:center;gap:12px}
+.nav-right-links a{font-size:.82rem;color:#8094B8;transition:color .2s}.nav-right-links a:hover{color:#E4EAFF}
+.nav-right-links .back-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:6px 14px;border-radius:8px;font-size:.8rem}
+
+/* MAIN WRAPPER */
+.main{max-width:700px;margin:0 auto;padding:40px 24px 80px}
+
+/* LOGIN CARD */
+.login-card{background:#121A2E;border:1px solid rgba(26,63,143,.35);border-radius:20px;padding:44px 40px;text-align:center}
+.login-icon{width:70px;height:70px;background:rgba(26,63,143,.15);border:1px solid rgba(245,166,35,.25);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.login-icon svg{width:36px;height:36px;color:#FFB940}
+.login-card h1{font-family:'Space Grotesk',sans-serif;font-size:1.7rem;font-weight:700;margin-bottom:8px}
+.login-card p{color:#8094B8;font-size:.9rem;margin-bottom:28px}
+.login-form{display:flex;flex-direction:column;gap:14px;text-align:left}
+.ff{position:relative}
+.ff input{width:100%;background:#0B1220;border:1px solid rgba(255,255,255,.08);color:#E4EAFF;font-size:.9rem;padding:15px 13px 7px;border-radius:8px;outline:none;transition:border-color .2s}
+.ff input:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.1)}
+.ff label{position:absolute;left:13px;top:13px;font-size:.85rem;color:#3D5080;pointer-events:none;transition:all .2s}
+.ff input:focus~label,.ff input:not(:placeholder-shown)~label{top:5px;font-size:.68rem;color:#FFB940;letter-spacing:.04em}
+.btn-login{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;background:linear-gradient(135deg,#1A3F8F,#2E6ADB);border:none;color:#fff;font-weight:700;font-size:.95rem;border-radius:10px;cursor:pointer;transition:all .3s;margin-top:4px}
+.btn-login:hover{box-shadow:0 6px 24px rgba(26,63,143,.5);transform:translateY(-1px)}
+.login-err{display:none;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.25);color:#FF6B6B;border-radius:8px;padding:10px 14px;font-size:.83rem;text-align:center;margin-top:4px}
+.login-hint{margin-top:14px;font-size:.78rem;color:#3D5080;text-align:center}
+.login-hint span{color:#FFB940;cursor:pointer}
+
+/* PORTAL DASHBOARD */
+.portal{display:none;flex-direction:column;gap:24px}
+
+/* Order card */
+.order-card{background:#121A2E;border:1px solid rgba(26,63,143,.35);border-radius:16px;overflow:hidden}
+.order-head{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.order-id-wrap{display:flex;align-items:center;gap:12px}
+.order-id{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:800;color:#FFB940}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:99px;font-size:.74rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.s-pending{background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);color:#FFB940}
+.s-confirmed{background:rgba(26,63,143,.18);border:1px solid rgba(46,106,219,.35);color:#7EB3FF}
+.s-picked_up{background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);color:#64B4FF}
+.s-in_transit{background:rgba(130,100,255,.1);border:1px solid rgba(130,100,255,.3);color:#A080FF}
+.s-out_for_delivery{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.4);color:#FFB940}
+.s-delivered{background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.25);color:#00D4AA}
+.s-damaged{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:#FF6B6B}
+.s-waiting_customer{background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);color:#FFC832}
+.s-cancelled{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#8094B8}
+.sdot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+.order-body{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.info-item{background:#0B1220;border-radius:8px;padding:12px}
+.info-lbl{font-size:.68rem;color:#3D5080;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.info-val{font-size:.88rem;font-weight:600;color:#E4EAFF}
+.info-val.highlight{color:#FFB940}
+@media(max-width:540px){.info-grid{grid-template-columns:1fr 1fr}}
+
+/* Timeline */
+.timeline-wrap{background:#0B1220;border-radius:10px;padding:16px}
+.tl-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8094B8;margin-bottom:14px}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:14px;position:relative}
+.tl-item:not(:last-child)::before{content:'';position:absolute;left:11px;top:24px;width:2px;bottom:-4px;background:rgba(26,63,143,.3)}
+.tl-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;margin-top:2px}
+.tl-dot.done{background:linear-gradient(135deg,#1A3F8F,#2E6ADB);color:#fff}
+.tl-dot.current{background:linear-gradient(135deg,#F5A623,#FFB940);color:#070C18;box-shadow:0 0 12px rgba(245,166,35,.4)}
+.tl-dot.future{background:#121A2E;border:2px solid rgba(255,255,255,.1);color:#3D5080}
+.tl-info{padding-bottom:14px}
+.tl-label{font-size:.84rem;font-weight:600;color:#E4EAFF}
+.tl-time{font-size:.73rem;color:#3D5080;margin-top:2px}
+.tl-note{font-size:.78rem;color:#8094B8;margin-top:3px;background:rgba(26,63,143,.1);border-radius:5px;padding:4px 8px;display:inline-block}
+
+/* Payment block */
+.pay-block{background:rgba(26,63,143,.08);border:1px solid rgba(26,63,143,.25);border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pay-block.paid{background:rgba(0,212,170,.06);border-color:rgba(0,212,170,.2)}
+.pay-info strong{display:block;font-size:.9rem;font-weight:700;margin-bottom:2px}
+.pay-info span{font-size:.78rem;color:#8094B8}
+.pay-amount{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:800;color:#FFB940}
+.pay-amount.paid-amount{color:#00D4AA}
+.btn-pay{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1A3F8F,#2E6ADB);border:none;color:#fff;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:9px;cursor:pointer;transition:all .3s}
+.btn-pay:hover{box-shadow:0 4px 16px rgba(26,63,143,.5);transform:translateY(-1px)}
+.paid-label{display:inline-flex;align-items:center;gap:6px;color:#00D4AA;font-weight:700;font-size:.85rem}
+
+/* POD */
+.pod-block{background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.2);border-radius:10px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pod-info strong{display:block;font-size:.88rem;font-weight:700;color:#00D4AA;margin-bottom:2px}
+.pod-info span{font-size:.76rem;color:#8094B8}
+.btn-pod{display:inline-flex;align-items:center;gap:8px;background:rgba(0,212,170,.15);border:1px solid rgba(0,212,170,.3);color:#00D4AA;font-weight:700;font-size:.85rem;padding:10px 20px;border-radius:9px;cursor:pointer;transition:all .3s}
+.btn-pod:hover{background:rgba(0,212,170,.25)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:60px 20px;color:#8094B8}
+.empty-state svg{opacity:.3;margin-bottom:16px}
+.empty-state h3{font-size:1.1rem;color:#E4EAFF;margin-bottom:8px}
+
+/* Lookup another */
+.lookup-another{background:#121A2E;border:1px solid rgba(26,63,143,.3);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.lookup-another input{flex:1;min-width:140px;background:#0B1220;border:1px solid rgba(255,255,255,.08);color:#E4EAFF;font-size:.88rem;padding:10px 12px;border-radius:7px;outline:none}
+.lookup-another input:focus{border-color:#F5A623}
+.btn-lookup{background:rgba(26,63,143,.2);border:1px solid rgba(26,63,143,.4);color:#7EB3FF;font-size:.85rem;font-weight:600;padding:10px 18px;border-radius:7px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.btn-lookup:hover{background:rgba(26,63,143,.35);color:#E4EAFF}
+
+/* Logout */
+.btn-logout{background:transparent;border:1px solid rgba(255,255,255,.1);color:#8094B8;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:rgba(255,107,107,.3);color:#FF6B6B}
+
+/* Payment modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal{background:#121A2E;border:1px solid rgba(26,63,143,.4);border-radius:16px;padding:36px;max-width:420px;width:100%;text-align:center;transform:scale(.92);transition:transform .3s;position:relative}
+.modal-bg.open .modal{transform:scale(1)}
+.modal-x{position:absolute;top:12px;right:12px;width:28px;height:28px;background:rgba(255,255,255,.06);border:none;color:#8094B8;font-size:1.1rem;border-radius:6px;cursor:pointer}
+.modal h3{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:700;margin:12px 0 8px}
+.modal p{color:#8094B8;font-size:.85rem;margin-bottom:8px}
+.pay-methods{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.pay-method{display:flex;align-items:center;gap:12px;background:#0B1220;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:13px 16px;cursor:pointer;transition:all .2s;text-align:left}
+.pay-method:hover{border-color:rgba(245,166,35,.4);background:rgba(26,63,143,.1)}
+.pay-method-icon{width:38px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;flex-shrink:0}
+.pm-bank{background:rgba(26,63,143,.3);color:#7EB3FF}
+.pm-card{background:rgba(245,166,35,.15);color:#FFB940}
+.pm-paypal{background:rgba(0,112,186,.2);color:#009CDE}
+.pay-method strong{display:block;font-size:.85rem;font-weight:700;color:#E4EAFF}
+.pay-method small{font-size:.72rem;color:#8094B8}
+</style>
+</head>
+<body>
+
+<nav>
+  <div style="display:flex;align-items:center;gap:10px">
+    <a href="index.html" style="display:flex;align-items:center;gap:4px">
+      <span class="logo-text">HexaLog</span><span class="logo-dot"></span>
+    </a>
+    <span class="nav-tag">Client Portal</span>
+  </div>
+  <div class="nav-right-links">
+    <button class="btn-logout" id="btnLogout" style="display:none">Log out</button>
+    <a href="index.html" class="back-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to site
+    </a>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <h1>Track Your Shipment</h1>
+      <p>Enter your Order ID and email address to access your shipment status, pay your invoice, and download your proof of delivery.</p>
+      <div class="login-form">
+        <div class="ff"><input type="text" id="loginId" placeholder=" " autocomplete="off"/><label>Order ID (e.g. HL-ABC123)</label></div>
+        <div class="ff"><input type="email" id="loginEmail" placeholder=" "/><label>Email Address</label></div>
+        <div id="loginErr" class="login-err">Order not found. Please check your Order ID and email.</div>
+        <button class="btn-login" id="btnLogin">
+          View My Shipment
+          <svg viewBox="0 0 24 24" width="17" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <p class="login-hint">Need help? <span onclick="window.location.href='mailto:info@hexalog.eu'">Contact support</span></p>
+      <div style="margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.06)">
+        <p style="font-size:.75rem;color:#3D5080;margin-bottom:10px">Just testing? Try the demo order:</p>
+        <button id="btnDemo" style="width:100%;padding:11px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:#FFB940;font-weight:700;font-size:.85rem;border-radius:9px;cursor:pointer;transition:all .2s">
+          Load Demo Order →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORTAL DASHBOARD -->
+  <div class="portal" id="portalScreen">
+
+    <!-- Greeting -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700" id="greetName">Welcome back</h2>
+        <p style="color:#8094B8;font-size:.85rem" id="greetSub">Here is your shipment overview</p>
+      </div>
+    </div>
+
+    <!-- Order card -->
+    <div class="order-card" id="orderCard"></div>
+
+    <!-- Lookup another order -->
+    <div class="lookup-another">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8094B8" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span style="font-size:.82rem;color:#8094B8;white-space:nowrap">Lookup another order:</span>
+      <input type="text" id="lookupId" placeholder="Order ID"/>
+      <input type="email" id="lookupEmail" placeholder="Email"/>
+      <button class="btn-lookup" id="btnLookup">Search</button>
+    </div>
+    <p id="lookupErr" style="font-size:.78rem;color:#FF6B6B;display:none;margin-top:-12px">Order not found.</p>
+
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-bg" id="payModal">
+  <div class="modal">
+    <button class="modal-x" id="payModalX">&times;</button>
+    <svg width="44" height="44" viewBox="0 0 64 64" fill="none"><rect x="4" y="16" width="56" height="36" rx="5" stroke="url(#pg)" stroke-width="2" fill="url(#pg)" fill-opacity=".08"/><path d="M4 26h56" stroke="url(#pg)" stroke-width="2"/><rect x="10" y="34" width="16" height="6" rx="2" fill="url(#pg)" fill-opacity=".4"/><defs><linearGradient id="pg" x1="0" y1="0" x2="64" y2="64"><stop offset="0%" stop-color="#1A3F8F"/><stop offset="100%" stop-color="#F5A623"/></linearGradient></defs></svg>
+    <h3>Pay Your Invoice</h3>
+    <p id="payAmountLabel" style="color:#FFB940;font-weight:700;font-size:1.1rem;margin:4px 0 4px"></p>
+    <p>Choose your preferred payment method:</p>
+    <div class="pay-methods">
+      <div class="pay-method" onclick="markPaid('bank')">
+        <div class="pay-method-icon pm-bank">🏦</div>
+        <div><strong>Bank Transfer</strong><small>IBAN: BE00 0000 0000 0000 · Ref: your Order ID</small></div>
+      </div>
+      <div class="pay-method" onclick="markPaid('card')">
+        <div class="pay-method-icon pm-card">💳</div>
+        <div><strong>Credit / Debit Card</strong><small>Visa, Mastercard, Amex accepted</small></div>
+      </div>
+      <div class="pay-method" onclick="markPaid('paypal')">
+        <div class="pay-method-icon pm-paypal">P</div>
+        <div><strong>PayPal</strong><small>Pay securely via PayPal</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var currentOrder = null;
+
+// ── SUPABASE ────────────────────────────────────────────────
+var _sb = supabase.createClient('https://mjcuhyujqpzgybbqeaxd.supabase.co','sb_publishable_1DZMiEy3eonWMiWKy7B_dA_t0IhBff0');
+function dbToOrder(r){
+  return {id:r.id,status:r.status,createdAt:r.created_at,orderType:r.order_type,
+    client:r.client||{},shipment:r.shipment||{},price:r.price,paid:r.paid,pod:r.pod,timeline:r.timeline||[]};
+}
+async function findOrder(id, email){
+  var {data,error}=await _sb.from('orders').select('*')
+    .ilike('id',id.trim())
+    .limit(10);
+  if(error||!data) return null;
+  var row=data.find(function(r){
+    return r.client && r.client.email && r.client.email.toLowerCase()===email.trim().toLowerCase();
+  });
+  return row ? dbToOrder(row) : null;
+}
+async function saveOrderRemote(o){
+  await _sb.from('orders').upsert({
+    id:o.id,status:o.status,created_at:o.createdAt,order_type:o.orderType||'B2B',
+    client:o.client,shipment:o.shipment,price:o.price,paid:o.paid||false,pod:o.pod||null,timeline:o.timeline||[]
+  });
+}
+function fmtDate(ts){
+  if(!ts) return '';
+  var d=new Date(ts);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+var STATUS_MAP = {
+  pending:        {label:'Order Received',      cls:'s-pending'},
+  confirmed:      {label:'Confirmed',           cls:'s-confirmed'},
+  picked_up:      {label:'Picked Up',           cls:'s-picked_up'},
+  in_transit:     {label:'In Transit',          cls:'s-in_transit'},
+  out_for_delivery:{label:'Out for Delivery',   cls:'s-out_for_delivery'},
+  delivered:      {label:'Delivered',           cls:'s-delivered'},
+  damaged:        {label:'Damaged',             cls:'s-damaged'},
+  waiting_customer:{label:'Waiting for Customer Response', cls:'s-waiting_customer'},
+  cancelled:      {label:'Cancelled',           cls:'s-cancelled'}
+};
+var STATUS_ORDER = ['pending','confirmed','picked_up','in_transit','out_for_delivery','delivered'];
+var CNAME={BE:'Belgium',NL:'Netherlands',LU:'Luxembourg',FR:'France'};
+
+// ── RENDER ORDER ─────────────────────────────────────────────
+function renderOrder(order){
+  currentOrder = order;
+  var sm = STATUS_MAP[order.status]||{label:order.status,cls:'s-pending'};
+  var s = order.shipment;
+
+  // Timeline
+  var tlHtml = '';
+  var tlEvents = order.timeline||[];
+  var reachedCurrent = false;
+  STATUS_ORDER.forEach(function(st){
+    var evt = tlEvents.find(function(e){return e.status===st});
+    var isCurrent = order.status===st && !['damaged','waiting_customer','cancelled'].includes(order.status);
+    var isDone = evt && order.status!==st;
+    var cls = isDone?'done':(isCurrent?'current':'future');
+    if(isCurrent) reachedCurrent=true;
+    var sm2 = STATUS_MAP[st]||{label:st};
+    tlHtml+='<div class="tl-item">';
+    tlHtml+='<div class="tl-dot '+cls+'">'+(isDone?'✓':(isCurrent?'●':'○'))+'</div>';
+    tlHtml+='<div class="tl-info"><div class="tl-label">'+sm2.label+'</div>';
+    if(evt){tlHtml+='<div class="tl-time">'+fmtDate(evt.ts)+'</div>';}
+    if(evt&&evt.note){tlHtml+='<div class="tl-note">'+evt.note+'</div>';}
+    tlHtml+='</div></div>';
+  });
+  // Special statuses
+  if(['damaged','waiting_customer','cancelled'].includes(order.status)){
+    var lastEvt = tlEvents[tlEvents.length-1];
+    var sm3 = STATUS_MAP[order.status]||{label:order.status};
+    tlHtml+='<div class="tl-item"><div class="tl-dot current">!</div>';
+    tlHtml+='<div class="tl-info"><div class="tl-label" style="color:#FF6B6B">'+sm3.label+'</div>';
+    if(lastEvt){tlHtml+='<div class="tl-time">'+fmtDate(lastEvt.ts)+'</div>';}
+    if(lastEvt&&lastEvt.note){tlHtml+='<div class="tl-note">'+lastEvt.note+'</div>';}
+    tlHtml+='</div></div>';
+  }
+
+  // Payment / Invoice block
+  var payHtml = '';
+  if(order.paid){
+    payHtml='<div class="pay-block paid">';
+    payHtml+='<div class="pay-info"><strong>Invoice</strong><span>Payment received — thank you!</span></div>';
+    payHtml+='<div class="pay-amount paid-amount">'+order.price+'</div>';
+    payHtml+='<span class="paid-label"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Paid</span>';
+    payHtml+='</div>';
+  } else if(order.status==='delivered'){
+    payHtml='<div class="pay-block">';
+    payHtml+='<div class="pay-info"><strong>Invoice Ready</strong><span>Order delivered — please settle your invoice</span></div>';
+    payHtml+='<div class="pay-amount">'+order.price+'</div>';
+    payHtml+='<button class="btn-pay" onclick="downloadInvoice()">&#8681; Download Invoice</button>';
+    payHtml+='</div>';
+  } else if(!['pending','cancelled'].includes(order.status)){
+    payHtml='<div class="pay-block">';
+    payHtml+='<div class="pay-info"><strong>Invoice Amount</strong><span>Invoice will be sent upon delivery</span></div>';
+    payHtml+='<div class="pay-amount">'+order.price+'</div>';
+    payHtml+='</div>';
+  }
+
+  // POD block
+  var podHtml = '';
+  if(order.status==='delivered'){
+    podHtml='<div class="pod-block">';
+    podHtml+='<div class="pod-info"><strong>Proof of Delivery Available</strong><span>Signed delivery confirmation</span></div>';
+    podHtml+='<button class="btn-pod" onclick="downloadPOD()">&#8681; Download POD</button>';
+    podHtml+='</div>';
+  }
+
+  // Label block — available from confirmed onwards
+  var labelHtml = '';
+  if(!['pending','cancelled'].includes(order.status)){
+    labelHtml='<div class="pod-block" style="border-color:rgba(245,166,35,.2);background:rgba(245,166,35,.04)">';
+    labelHtml+='<div class="pod-info"><strong>Pallet Labels</strong><span>Print &amp; stick on each pallet</span></div>';
+    labelHtml+='<button class="btn-pod" style="background:linear-gradient(135deg,#B8720A,#F5A623)" onclick="downloadLabels()">&#8681; Download Labels</button>';
+    labelHtml+='</div>';
+  }
+
+  var html = '<div class="order-head">';
+  html+='<div class="order-id-wrap">';
+  html+='<span class="order-id">'+order.id+'</span>';
+  html+='<span class="status-badge '+sm.cls+'"><span class="sdot"></span>'+sm.label+'</span>';
+  html+='</div>';
+  html+='<span style="font-size:.78rem;color:#3D5080">Booked '+fmtDate(order.createdAt)+'</span>';
+  html+='</div>';
+  html+='<div class="order-body">';
+  html+='<div class="info-grid">';
+  html+='<div class="info-item"><div class="info-lbl">From</div><div class="info-val">'+(CNAME[s.from]||s.from)+'</div></div>';
+  html+='<div class="info-item"><div class="info-lbl">To</div><div class="info-val">'+(CNAME[s.to]||s.to)+'</div></div>';
+  html+='<div class="info-item"><div class="info-lbl">Service</div><div class="info-val">'+s.service+'</div></div>';
+  html+='<div class="info-item"><div class="info-lbl">Pallets</div><div class="info-val">'+s.qty+'× '+s.palletType+'</div></div>';
+  html+='<div class="info-item"><div class="info-lbl">Weight</div><div class="info-val">'+(s.weight?s.weight+' kg':'—')+'</div></div>';
+  html+='<div class="info-item"><div class="info-lbl">Total Price</div><div class="info-val highlight">'+order.price+'</div></div>';
+  html+='</div>';
+  // Extras chips
+  var chips=[];
+  if(s.express)chips.push('Express 24h');
+  if(s.weekend)chips.push('Weekend Delivery');
+  if(s.taillift)chips.push('Tail Lift');
+  if(s.insurance)chips.push('Cargo Insurance');
+  if(chips.length){
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
+    chips.forEach(function(c){html+='<span style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);color:#FFB940;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:99px">'+c+'</span>';});
+    html+='</div>';
+  }
+  if(s.notes){html+='<div style="background:#0B1220;border-radius:8px;padding:10px 13px;font-size:.82rem;color:#8094B8"><span style="color:#3D5080;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px">Notes</span>'+s.notes+'</div>';}
+  // Timeline
+  html+='<div class="timeline-wrap"><div class="tl-title">Shipment Timeline</div><div class="timeline">'+tlHtml+'</div></div>';
+  // Payment
+  if(payHtml) html+=payHtml;
+  // Labels
+  if(labelHtml) html+=labelHtml;
+  // POD
+  if(podHtml) html+=podHtml;
+  html+='</div>';
+
+  document.getElementById('orderCard').innerHTML=html;
+
+  // Pay button
+  var openPay=document.getElementById('openPayModal');
+  if(openPay){
+    openPay.addEventListener('click',function(){
+      document.getElementById('payAmountLabel').textContent=order.price;
+      document.getElementById('payModal').classList.add('open');
+    });
+  }
+}
+
+// ── LOGIN ────────────────────────────────────────────────────
+document.getElementById('btnLogin').addEventListener('click', async function(){
+  var id=document.getElementById('loginId').value;
+  var email=document.getElementById('loginEmail').value;
+  var btn=document.getElementById('btnLogin');
+  var err=document.getElementById('loginErr');
+  btn.disabled=true; btn.textContent='Searching…';
+  var order=await findOrder(id,email);
+  btn.disabled=false; btn.textContent='View My Order';
+  if(!order){err.style.display='block';return;}
+  err.style.display='none';
+  currentOrder=order;
+  showPortal(order);
+  sessionStorage.setItem('hl_portal_id',order.id);
+  sessionStorage.setItem('hl_portal_email',order.client.email);
+});
+['loginId','loginEmail'].forEach(function(id){
+  document.getElementById(id).addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('btnLogin').click();});
+});
+
+function showPortal(order){
+  document.getElementById('loginScreen').style.display='none';
+  var p=document.getElementById('portalScreen');
+  p.style.display='flex';
+  document.getElementById('btnLogout').style.display='block';
+  var name=order.client.name||'there';
+  document.getElementById('greetName').textContent='Welcome, '+name.split(' ')[0]+'!';
+  document.getElementById('greetSub').textContent='Order '+order.id+' — last updated '+fmtDate(order.timeline[order.timeline.length-1].ts);
+  renderOrder(order);
+}
+
+// ── LOGOUT ───────────────────────────────────────────────────
+document.getElementById('btnLogout').addEventListener('click',function(){
+  sessionStorage.clear();
+  currentOrder=null;
+  document.getElementById('portalScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='block';
+  document.getElementById('btnLogout').style.display='none';
+  document.getElementById('loginId').value='';
+  document.getElementById('loginEmail').value='';
+});
+
+// ── LOOKUP ANOTHER ───────────────────────────────────────────
+document.getElementById('btnLookup').addEventListener('click',function(){
+  var id=document.getElementById('lookupId').value;
+  var email=document.getElementById('lookupEmail').value;
+  var order=findOrder(id,email);
+  var err=document.getElementById('lookupErr');
+  if(!order){err.style.display='block';return;}
+  err.style.display='none';
+  sessionStorage.setItem('hl_portal_id',order.id);
+  sessionStorage.setItem('hl_portal_email',order.client.email);
+  showPortal(order);
+});
+
+// ── PAYMENT ──────────────────────────────────────────────────
+document.getElementById('payModalX').addEventListener('click',function(){document.getElementById('payModal').classList.remove('open');});
+
+async function markPaid(method){
+  document.getElementById('payModal').classList.remove('open');
+  if(!currentOrder) return;
+  currentOrder.paid=true;
+  currentOrder.paymentMethod=method;
+  await saveOrderRemote(currentOrder);
+  renderOrder(currentOrder);
+}
+
+// ── PALLET LABELS ────────────────────────────────────────────
+function drawBarcode(doc, text, x, y, w, h){
+  // Encode text as binary bits → bars
+  var bits = [];
+  // Start guard bars
+  bits = bits.concat([1,0,1]);
+  for(var i=0;i<text.length;i++){
+    var c = text.charCodeAt(i) % 95 + 32; // printable ASCII
+    // Simple encoding: each char = 7 bits
+    for(var b=6;b>=0;b--) bits.push((c>>b)&1);
+    bits.push(0); // separator
+  }
+  // End guard
+  bits = bits.concat([1,0,1,1]);
+
+  var totalBars = bits.length;
+  var barW = w / totalBars;
+  for(var j=0;j<bits.length;j++){
+    if(bits[j]){
+      doc.setFillColor(0,0,0);
+      doc.rect(x + j*barW, y, barW*0.85, h, 'F');
+    }
+  }
+}
+
+function downloadLabels(){
+  if(!currentOrder) return;
+  var o = currentOrder;
+  var s = o.shipment||{};
+  var qty = parseInt(s.qty)||1;
+  var CNAMES = {BE:'Belgium',NL:'Netherlands',LU:'Luxembourg',FR:'France'};
+  var jsPDF = window.jspdf.jsPDF;
+
+  // A6 portrait: 105 × 148 mm — one label per page
+  var doc = new jsPDF({unit:'mm', format:[105,148], orientation:'portrait'});
+
+  for(var p=1;p<=qty;p++){
+    if(p>1) doc.addPage([105,148]);
+    var LW = 105, LH = 148, M = 5;
+    var y = 0;
+
+    // ── TOP HEADER ──────────────────────────────────────────
+    doc.setFillColor(8,14,32);
+    doc.rect(0,0,LW,20,'F');
+
+    // Company name
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(16);
+    doc.setTextColor(255,255,255);
+    doc.text('HEXALOG', M+1, 10);
+
+    // Tagline
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100,140,220);
+    doc.text('Logistics · Benelux & France', M+1, 16);
+
+    // Pallet count badge — top right
+    var countStr = p+'/'+qty;
+    doc.setFillColor(245,166,35);
+    doc.roundedRect(LW-22, 3, 18, 14, 2, 2, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(p===qty&&qty===1?14:12);
+    doc.setTextColor(10,18,40);
+    doc.text(countStr, LW-13, 12, {align:'center'});
+
+    y = 23;
+
+    // ── FROM → TO ────────────────────────────────────────────
+    // Left: FROM
+    var colW = (LW - M*2 - 6) / 2;
+    doc.setFillColor(230,237,255);
+    doc.rect(M, y, colW, 30, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(26,63,143);
+    doc.text('VAN / FROM', M+2, y+5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(8,14,32);
+    doc.text((CNAMES[s.from]||s.from||'—'), M+2, y+12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(40,60,100);
+    if(s.fromCity) doc.text(s.fromCity, M+2, y+18);
+    if(s.pickupAddress){
+      var addrLines = doc.splitTextToSize(s.pickupAddress, colW-4);
+      doc.text(addrLines[0]||'', M+2, y+24);
+    }
+
+    // Arrow
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(245,166,35);
+    doc.text('→', M+colW+1.5, y+17, {align:'center'});
+
+    // Right: TO
+    var toX = M+colW+6;
+    doc.setFillColor(220,250,240);
+    doc.rect(toX, y, colW, 30, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(0,140,100);
+    doc.text('NAAR / TO', toX+2, y+5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(8,14,32);
+    doc.text((CNAMES[s.to]||s.to||'—'), toX+2, y+12);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(40,80,60);
+    if(s.toCity) doc.text(s.toCity, toX+2, y+18);
+    if(s.deliveryAddress){
+      var dLines = doc.splitTextToSize(s.deliveryAddress, colW-4);
+      doc.text(dLines[0]||'', toX+2, y+24);
+    }
+
+    y += 34;
+
+    // ── ORDER INFO ROW ───────────────────────────────────────
+    doc.setFillColor(245,248,255);
+    doc.rect(M, y, LW-M*2, 14, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(100,120,170);
+    doc.text('ORDERNUMMER', M+2, y+5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(8,14,32);
+    doc.text(o.id, M+2, y+11.5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(100,120,170);
+    doc.text('SERVICE', LW*0.58, y+5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(26,63,143);
+    doc.text((s.service||'LTL'), LW*0.58, y+11.5);
+    y += 17;
+
+    // ── SPECS ────────────────────────────────────────────────
+    doc.setDrawColor(210,220,240); doc.setLineWidth(0.3);
+    var specCols = [M, M+25, M+50, M+75];
+    var specLabels = ['GEWICHT','HOOGTE','PALLET TYPE','STUKS'];
+    var palDims = {
+      'Euro Pallet':'120×80cm','Block Pallet':'120×100cm',
+      'Half Pallet':'80×60cm','Industry Pallet':'120×120cm','Custom':'—'
+    };
+    var specVals = [
+      (s.weight?(s.weight+' kg'):'—'),
+      (s.height?(s.height+' cm'):'—'),
+      (palDims[s.palletType]||s.palletType||'—'),
+      p+' / '+qty
+    ];
+    doc.setFillColor(250,251,255);
+    doc.rect(M, y, LW-M*2, 18, 'F');
+    for(var c=0;c<4;c++){
+      doc.setFont('helvetica','bold'); doc.setFontSize(5.5); doc.setTextColor(130,150,190);
+      doc.text(specLabels[c], specCols[c]+1, y+5);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(8,14,32);
+      doc.text(specVals[c], specCols[c]+1, y+13);
+    }
+    y += 21;
+
+    // ── DELIVERY ADDRESS FULL ────────────────────────────────
+    if(s.deliveryAddress||s.deliveryContact){
+      doc.setFillColor(240,255,248);
+      doc.rect(M, y, LW-M*2, 18, 'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(0,140,100);
+      doc.text('AFLEVERADRES / DELIVERY ADDRESS', M+2, y+5);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(8,14,32);
+      var fullAddr = [s.deliveryContact, s.deliveryAddress, (s.toCity?s.toCity+', ':'')+(CNAMES[s.to]||s.to||'')].filter(Boolean).join('  ·  ');
+      var adLines = doc.splitTextToSize(fullAddr, LW-M*2-4);
+      doc.text(adLines.slice(0,2), M+2, y+11);
+      y += 21;
+    }
+
+    // ── BARCODE ──────────────────────────────────────────────
+    var bcY = LH - 28;
+    doc.setFillColor(255,255,255);
+    doc.rect(0, bcY-3, LW, 28, 'F');
+    doc.setDrawColor(210,220,240); doc.setLineWidth(0.3);
+    doc.line(0, bcY-3, LW, bcY-3);
+
+    var barcodeText = o.id+'-'+p+'/'+qty;
+    drawBarcode(doc, barcodeText, M, bcY, LW-M*2, 16);
+
+    // Barcode label
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(60,80,120);
+    doc.text(barcodeText, LW/2, bcY+19, {align:'center'});
+
+    // Bottom strip
+    doc.setFillColor(8,14,32);
+    doc.rect(0, LH-7, LW, 7, 'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(100,130,180);
+    doc.text('hexalog.eu  ·  info@hexalog.eu', LW/2, LH-2.5, {align:'center'});
+  }
+
+  doc.save('HexaLog-Labels-'+o.id+'.pdf');
+}
+
+// ── INVOICE PDF ──────────────────────────────────────────────
+function downloadInvoice(){
+  if(!currentOrder) return;
+  var o = currentOrder;
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({unit:'mm', format:'a4'});
+  var W = 210, M = 18;
+
+  // Header bar
+  doc.setFillColor(10, 18, 40);
+  doc.rect(0, 0, W, 38, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(22); doc.setFont('helvetica','bold');
+  doc.text('HEXALOG', M, 18);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.setTextColor(100,150,220);
+  doc.text('Logistics · Benelux & France', M, 25);
+  doc.setTextColor(245,166,35);
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('INVOICE', W-M, 18, {align:'right'});
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.setTextColor(180,200,240);
+  doc.text('info@hexalog.eu', W-M, 25, {align:'right'});
+  doc.text('hexalog.eu', W-M, 30, {align:'right'});
+
+  var y = 50;
+
+  // Invoice meta
+  doc.setTextColor(30,30,50);
+  doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.setTextColor(100,120,160);
+  doc.text('ORDER ID', M, y); doc.text('DATE', 90, y); doc.text('STATUS', 140, y);
+  y += 5;
+  doc.setFont('helvetica','bold'); doc.setTextColor(10,18,40); doc.setFontSize(11);
+  doc.text(o.id, M, y);
+  doc.setFontSize(10);
+  doc.text(new Date(o.createdAt||Date.now()).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}), 90, y);
+  doc.setTextColor(0,180,120);
+  doc.text('DELIVERED', 140, y);
+
+  y += 12;
+  // Divider
+  doc.setDrawColor(220,228,240); doc.setLineWidth(0.4);
+  doc.line(M, y, W-M, y); y += 10;
+
+  // Client & Shipment side by side
+  var col2 = W/2+2;
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(100,120,160);
+  doc.text('BILL TO', M, y);
+  doc.text('SHIPMENT DETAILS', col2, y);
+  y += 5;
+  doc.setFont('helvetica','normal'); doc.setTextColor(20,30,60); doc.setFontSize(9);
+
+  var clientLines = [
+    o.client.name||'',
+    o.client.company||'',
+    o.client.email||'',
+    o.client.phone||''
+  ].filter(Boolean);
+  clientLines.forEach(function(l){ doc.text(l, M, y); y+=5; });
+
+  var sy = y - (clientLines.length*5);
+  var s = o.shipment||{};
+  var CNAMES = {BE:'Belgium',NL:'Netherlands',LU:'Luxembourg',FR:'France'};
+  var shipLines = [
+    'From: '+(CNAMES[s.from]||s.from||'—')+(s.fromCity?', '+s.fromCity:''),
+    'To: '+(CNAMES[s.to]||s.to||'—')+(s.toCity?', '+s.toCity:''),
+    'Service: '+(s.service||'LTL'),
+    'Pallets: '+s.qty+'× '+(s.palletType||'Euro Pallet'),
+    s.weight?'Weight: '+s.weight+' kg':'',
+    s.height?'Height: '+s.height+' cm':''
+  ].filter(Boolean);
+  shipLines.forEach(function(l){ doc.text(l, col2, sy); sy+=5; });
+
+  y = Math.max(y, sy) + 8;
+  doc.line(M, y, W-M, y); y += 10;
+
+  // Price table
+  doc.setFillColor(240,244,255);
+  doc.rect(M, y-4, W-M*2, 9, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(50,70,120);
+  doc.text('Description', M+2, y+1);
+  doc.text('Amount', W-M-2, y+1, {align:'right'});
+  y += 10;
+  doc.setFont('helvetica','normal'); doc.setTextColor(20,30,60);
+  doc.text('Freight service — '+s.service+' · '+(CNAMES[s.from]||s.from)+' → '+(CNAMES[s.to]||s.to), M+2, y);
+  doc.setFont('helvetica','bold');
+  doc.text(o.price||'TBD', W-M-2, y, {align:'right'});
+  y += 6;
+  doc.setDrawColor(200,210,235); doc.line(M, y, W-M, y); y += 4;
+  doc.setFontSize(10);
+  doc.text('TOTAL DUE', M+2, y+3);
+  doc.setTextColor(245,140,20); doc.setFontSize(13);
+  doc.text(o.price||'TBD', W-M-2, y+3, {align:'right'});
+
+  y += 18;
+  doc.line(M, y, W-M, y); y += 10;
+
+  // Payment instructions
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(10,18,40);
+  doc.text('Payment Instructions', M, y); y += 7;
+
+  // Bank
+  doc.setFillColor(245,248,255);
+  doc.rect(M, y-3, W-M*2, 22, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(26,63,143);
+  doc.text('🏦  Bank Transfer', M+3, y+2);
+  doc.setFont('helvetica','normal'); doc.setTextColor(30,40,80);
+  doc.text('IBAN:      BE00 0000 0000 0000', M+3, y+7);
+  doc.text('BIC:       GEBABEBB', M+3, y+12);
+  doc.text('Reference: '+o.id+' — '+o.client.name, M+3, y+17);
+  y += 27;
+
+  // PayPal
+  doc.setFillColor(245,248,255);
+  doc.rect(M, y-3, W-M*2, 13, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(0,53,167);
+  doc.text('P  PayPal', M+3, y+2);
+  doc.setFont('helvetica','normal'); doc.setTextColor(30,40,80);
+  doc.text('Send to: payments@hexalog.eu  |  Note: '+o.id, M+3, y+8);
+  y += 18;
+
+  doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(140,150,170);
+  doc.text('Please include your Order ID as payment reference. Thank you for choosing HexaLog!', M, y);
+
+  // Footer
+  doc.setFillColor(10,18,40);
+  doc.rect(0, 282, W, 15, 'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,130,180);
+  doc.text('HexaLog  ·  info@hexalog.eu  ·  hexalog.eu  ·  Benelux & France', W/2, 290, {align:'center'});
+
+  doc.save('HexaLog-Invoice-'+o.id+'.pdf');
+}
+
+// ── POD DOWNLOAD — real PDF via jsPDF ───────────────────────
+function generatePOD(order){
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({unit:'mm', format:'a4'});
+  var W = 210, H = 297;
+  var DARK  = [11, 18, 32];
+  var BLUE  = [26, 63, 143];
+  var GOLD  = [245, 166, 35];
+  var GREEN = [0, 212, 170];
+  var LIGHT = [248, 249, 252];
+  var BORDER= [224, 228, 239];
+  var GREY  = [61, 80, 128];
+  var WHITE = [255, 255, 255];
+  var s = order.shipment || {};
+  var c = order.client   || {};
+  var CNAME = {BE:'Belgium', NL:'Netherlands', LU:'Luxembourg', FR:'France'};
+
+  function fmtDate(ts){
+    if(!ts) return '—';
+    var d = new Date(ts);
+    return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) +
+           '  ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  // ── HEADER ──────────────────────────────────────────────────
+  doc.setFillColor(...DARK);
+  doc.rect(0, 0, W, 32, 'F');
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 32, W, 2, 'F');
+
+  // Logo text
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(22);
+  doc.setTextColor(...[74, 158, 255]);
+  doc.text('HexaLog', 14, 19);
+  // Gold dot after logo
+  doc.setFillColor(...GOLD);
+  doc.circle(52, 16, 2, 'F');
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...[128, 148, 184]);
+  doc.text('Logistics Benelux & France  |  info@hexalog.eu  |  +32 (0) 00 00 00 00', 14, 27);
+
+  // Order ID top-right
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...[128, 148, 184]);
+  doc.text('Document No.', 155, 17);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...BLUE);
+  doc.text(order.id, 155, 25);
+
+  // ── TITLE ────────────────────────────────────────────────────
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(18);
+  doc.setTextColor(...DARK);
+  doc.text('PROOF OF DELIVERY', 14, 46);
+  doc.setFillColor(...GOLD);
+  doc.rect(14, 48, 60, 1, 'F');
+
+  // ── INFO BOXES ───────────────────────────────────────────────
+  var boxY = 54;
+  // Left box — Shipment
+  doc.setFillColor(...LIGHT);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(14, boxY, 86, 58, 3, 3, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...GREY);
+  doc.text('SHIPMENT DETAILS', 19, boxY+8);
+
+  var rows1 = [
+    ['Order ID',    order.id],
+    ['From',        CNAME[s.from]||s.from||'—'],
+    ['To',          CNAME[s.to]||s.to||'—'],
+    ['Pallets',     (s.qty||1)+'× '+(s.palletType||'Euro Pallet')+' ('+(s.weight||'—')+' kg)'],
+    ['Service',     (s.service||'LTL')+(s.taillift?' + Tail Lift':'')],
+    ['Total Price', order.price+(order.paid?' (Paid)':'')],
+  ];
+  rows1.forEach(function(r, i){
+    var y2 = boxY + 17 + i*7;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GREY);
+    doc.text(r[0], 19, y2);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(...DARK);
+    doc.text(r[1], 58, y2);
+  });
+
+  // Right box — Client
+  doc.setFillColor(...LIGHT);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(108, boxY, 88, 58, 3, 3, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...GREY);
+  doc.text('CLIENT DETAILS', 113, boxY+8);
+
+  var deliveryEvt = (order.timeline||[]).find(function(e){return e.status==='delivered';});
+  var rows2 = [
+    ['Name',          c.name||'—'],
+    ['Company',       c.company||'—'],
+    ['Email',         c.email||'—'],
+    ['Phone',         c.phone||'—'],
+    ['Delivery Date', fmtDate(deliveryEvt&&deliveryEvt.ts)],
+    ['Driver',        'Thomas Vandenberghe'],
+  ];
+  rows2.forEach(function(r, i){
+    var y2 = boxY + 17 + i*7;
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GREY);
+    doc.text(r[0], 113, y2);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(...DARK);
+    var val = r[1].length > 28 ? r[1].substring(0,27)+'…' : r[1];
+    doc.text(val, 142, y2);
+  });
+
+  // ── TIMELINE ─────────────────────────────────────────────────
+  var tlY = boxY + 66;
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...DARK);
+  doc.text('Delivery Timeline', 14, tlY);
+  doc.setDrawColor(...BORDER);
+  doc.line(14, tlY+3, 196, tlY+3);
+
+  var STATUS_LABELS = {
+    pending:'Order Received', confirmed:'Confirmed', picked_up:'Picked Up',
+    in_transit:'In Transit', out_for_delivery:'Out for Delivery', delivered:'Delivered'
+  };
+  var tl = order.timeline || [];
+  var stepY = tlY + 12;
+  tl.forEach(function(evt, i){
+    var label = STATUS_LABELS[evt.status] || evt.status;
+    var isDone = evt.status === 'delivered';
+    // Circle
+    if(isDone){
+      doc.setFillColor(...GREEN);
+    } else {
+      doc.setFillColor(...BLUE);
+    }
+    doc.circle(19, stepY-1.5, 3.5, 'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(7);
+    doc.setTextColor(...WHITE);
+    doc.text(String(i+1), i<9?17.8:17, stepY-0.5);
+
+    // Connector line
+    if(i < tl.length-1){
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.5);
+      doc.line(19, stepY+2, 19, stepY+9);
+    }
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(isDone ? GREEN[0] : DARK[0], isDone ? GREEN[1] : DARK[1], isDone ? GREEN[2] : DARK[2]);
+    doc.text(label + (isDone?' ✓':''), 26, stepY);
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GREY);
+    var detail = fmtDate(evt.ts) + (evt.note ? '  |  '+evt.note : '');
+    doc.text(detail, 26, stepY+5);
+    stepY += 13;
+  });
+
+  // ── SIGNATURES ───────────────────────────────────────────────
+  var sigY = stepY + 8;
+  // Recipient box
+  doc.setFillColor(...LIGHT);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(14, sigY, 86, 42, 3, 3, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...GREY);
+  doc.text('RECIPIENT SIGNATURE', 19, sigY+8);
+  doc.setFont('helvetica','bolditalic');
+  doc.setFontSize(18);
+  doc.setTextColor(...DARK);
+  doc.text(c.name ? c.name.split(' ').map(function(n){return n[0]}).join('').substring(0,2)+'. '+(c.name.split(' ').pop()||'') : 'Signed', 19, sigY+26);
+  doc.setDrawColor(...DARK);
+  doc.setLineWidth(0.4);
+  doc.line(19, sigY+30, 95, sigY+30);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...GREY);
+  doc.text((c.name||'')+(c.company?' — '+c.company:''), 19, sigY+36);
+  doc.text(fmtDate(deliveryEvt&&deliveryEvt.ts), 19, sigY+40);
+
+  // Driver box
+  doc.setFillColor(...LIGHT);
+  doc.setDrawColor(...BORDER);
+  doc.roundedRect(108, sigY, 88, 42, 3, 3, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(7);
+  doc.setTextColor(...GREY);
+  doc.text('DRIVER CONFIRMATION', 113, sigY+8);
+  doc.setFont('helvetica','bolditalic');
+  doc.setFontSize(18);
+  doc.setTextColor(...DARK);
+  doc.text('T. Vandenberghe', 113, sigY+26);
+  doc.setDrawColor(...DARK);
+  doc.setLineWidth(0.4);
+  doc.line(113, sigY+30, 192, sigY+30);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...GREY);
+  doc.text('Thomas Vandenberghe — HexaLog Driver', 113, sigY+36);
+  doc.text('Vehicle: 1-ABC-234', 113, sigY+40);
+
+  // ── CONDITION BOX ────────────────────────────────────────────
+  var condY = sigY + 50;
+  doc.setFillColor(240, 253, 248);
+  doc.setDrawColor(...GREEN);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(14, condY, 182, 16, 3, 3, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...GREEN);
+  doc.text('✓  Goods received in good condition — No damage reported', 19, condY+7);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...GREY);
+  doc.text('Special instructions noted: '+(s.notes||'None'), 19, condY+13);
+
+  // ── FOOTER ───────────────────────────────────────────────────
+  doc.setFillColor(...DARK);
+  doc.rect(0, H-18, W, 18, 'F');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...[128,148,184]);
+  doc.text('HexaLog — Logistics Benelux & France  |  info@hexalog.eu', 14, H-10);
+  doc.text('This is an official proof of delivery document.  Generated: '+new Date().toUTCString(), 14, H-5);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...GOLD);
+  doc.text(order.id, 180, H-9);
+
+  return doc;
+}
+
+function downloadPOD(){
+  if(!currentOrder) return;
+  var doc = generatePOD(currentOrder);
+  doc.save('POD_' + currentOrder.id + '.pdf');
+}
+
+// ── DEMO BUTTON ──────────────────────────────────────────────
+document.getElementById('btnDemo').addEventListener('click', async function(){
+  var btn = this;
+  btn.disabled = true;
+  btn.textContent = 'Loading demo…';
+
+  var now = Date.now();
+  var demo = {
+    id:'HL-DEMO01', status:'delivered',
+    createdAt: new Date(now - 86400000*2).toISOString(),
+    orderType: 'B2B',
+    client:{name:'Jan Janssen', email:'jan@test.com', phone:'+32 470 00 00 00', company:'Test BV'},
+    shipment:{
+      from:'BE', fromCity:'Antwerp', pickupAddress:'Havenlaan 12, 2000 Antwerp', pickupPhone:'+32 3 000 0000',
+      to:'NL', toCity:'Rotterdam', deliveryAddress:'Waalhaven 5, 3087 Rotterdam', deliveryPhone:'+31 10 000 0000',
+      qty:3, palletType:'Euro Pallet', height:'120', weight:'450',
+      service:'LTL', express:false, weekend:false, taillift:true, insurance:false,
+      notes:'Handle with care — fragile electronics'
+    },
+    price:'€114.00', paid:true, paymentMethod:'bank', pod:true,
+    timeline:[
+      {status:'pending',    ts:new Date(now-86400000*2).toISOString(),    note:'Order received online'},
+      {status:'confirmed',  ts:new Date(now-86400000*1.5).toISOString(),  note:'Confirmed by HexaLog team'},
+      {status:'picked_up',  ts:new Date(now-86400000).toISOString(),      note:'Picked up at 09:15, driver on route'},
+      {status:'in_transit', ts:new Date(now-3600000*6).toISOString(),     note:'Arrived at Antwerp hub'},
+      {status:'delivered',  ts:new Date(now-3600000*2).toISOString(),     note:'Delivered and signed by J. Janssen'}
+    ]
+  };
+
+  // Upsert into Supabase so findOrder works on any device
+  await _sb.from('orders').upsert({
+    id: demo.id,
+    status: demo.status,
+    created_at: demo.createdAt,
+    order_type: demo.orderType,
+    client: demo.client,
+    shipment: demo.shipment,
+    price: demo.price,
+    paid: demo.paid,
+    pod: demo.pod,
+    timeline: demo.timeline
+  });
+
+  document.getElementById('loginId').value = 'HL-DEMO01';
+  document.getElementById('loginEmail').value = 'jan@test.com';
+  currentOrder = demo;
+  showPortal(demo);
+  sessionStorage.setItem('hl_portal_id', demo.id);
+  sessionStorage.setItem('hl_portal_email', demo.client.email);
+
+  btn.disabled = false;
+  btn.textContent = 'Load Demo Order →';
+});
+
+// ── AUTO LOGIN FROM SESSION ──────────────────────────────────
+(async function(){
+  var sid=sessionStorage.getItem('hl_portal_id');
+  var sem=sessionStorage.getItem('hl_portal_email');
+  if(sid&&sem){
+    var order=await findOrder(sid,sem);
+    if(order){ currentOrder=order; showPortal(order); }
+  }
+})();
+</script>
+<!-- ── WhatsApp Float Button ── -->
+<style>.wa-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end}.wa-tip{background:rgba(5,10,22,.95);border:1px solid rgba(37,211,102,.4);border-radius:10px;padding:9px 14px;font-size:.78rem;font-weight:600;color:#E4EAFF;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(6px);transition:.3s;backdrop-filter:blur(12px);margin-bottom:10px;position:relative}.wa-tip::after{content:'';position:absolute;bottom:-6px;right:18px;width:10px;height:10px;background:rgba(5,10,22,.95);border-right:1px solid rgba(37,211,102,.4);border-bottom:1px solid rgba(37,211,102,.4);transform:rotate(45deg)}.wa-wrap.show .wa-tip{opacity:1;transform:translateY(0)}.wa-btn{display:flex;align-items:center;cursor:pointer;text-decoration:none;animation:wa-pop .5s cubic-bezier(.34,1.56,.64,1) 1.5s both}@keyframes wa-pop{from{opacity:0;transform:scale(0) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}.wa-inner{display:flex;align-items:center;gap:0;background:#25D366;border-radius:50px;box-shadow:0 4px 20px rgba(37,211,102,.45);overflow:hidden;transition:.3s}.wa-btn:hover .wa-inner{box-shadow:0 6px 28px rgba(37,211,102,.65)}.wa-icon{width:56px;height:56px;display:flex;align-items:center;justify-content:center}.wa-text{max-width:0;opacity:0;white-space:nowrap;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;color:#fff;padding-right:0;transition:max-width .35s,opacity .35s,padding .35s;overflow:hidden}.wa-btn:hover .wa-text{max-width:160px;opacity:1;padding-right:18px}@media(max-width:480px){.wa-icon{width:48px;height:48px}.wa-wrap{bottom:18px;right:18px}}</style>
+<div class="wa-wrap" id="wa-wrap"><div class="wa-tip">Need help? Chat on WhatsApp 💬</div><a class="wa-btn" href="https://wa.me/31612345678?text=Hello%20HexaLog%2C%20I%20need%20help%20with%20a%20shipment." target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><div class="wa-inner"><div class="wa-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></div><span class="wa-text">Chat with us</span></div></a></div>
+<script>(function(){var w=document.getElementById('wa-wrap');if(!w)return;setTimeout(function(){w.classList.add('show');},2000);setTimeout(function(){w.classList.remove('show');},5500);})();</script>
+</body>
+</html>

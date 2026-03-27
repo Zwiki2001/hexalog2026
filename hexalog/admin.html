@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HexaLog — Admin TMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<!-- EmailJS — automated client notifications -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// ── EmailJS Configuration ──────────────────────────────────────────
+// SETUP INSTRUCTIONS (one-time, takes 5 min):
+// 1. Go to https://www.emailjs.com and create a free account
+// 2. Add an Email Service (Gmail or info@hexalog.eu)
+// 3. Create an Email Template with these variables:
+//    {{to_email}}, {{to_name}}, {{order_id}}, {{status_label}},
+//    {{route}}, {{message}}, {{portal_url}}
+// 4. Replace the 3 values below with your real IDs from EmailJS dashboard
+var EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // e.g. 'service_abc123'
+var EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // e.g. 'template_xyz789'
+var EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // e.g. 'aBcDeFgHiJkL'
+var EMAILJS_CONFIGURED  = (EMAILJS_SERVICE_ID !== 'YOUR_SERVICE_ID');
+
+if (EMAILJS_CONFIGURED) {
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+}
+
+var STATUS_MESSAGES = {
+  confirmed:        { label: 'Order Confirmed ✓',         msg: 'Great news! We have confirmed your booking. Our driver will contact you before pickup to confirm the exact time slot.' },
+  picked_up:        { label: 'Shipment Picked Up 🚛',     msg: 'Your shipment has been collected by our driver and is on its way to the destination.' },
+  in_transit:       { label: 'In Transit 📦',             msg: 'Your shipment is currently in transit. We estimate delivery within the agreed timeframe.' },
+  delivered:        { label: 'Delivered! 🎉',             msg: 'Your shipment has been successfully delivered. You can now download your Proof of Delivery (POD) from the client portal.' },
+  waiting_customer: { label: 'Action Required ⚠️',        msg: 'We need some additional information before we can process your shipment. Please check your email and reply as soon as possible.' },
+  cancelled:        { label: 'Order Cancelled',           msg: 'Unfortunately your order has been cancelled. Please contact us at info@hexalog.eu if you have any questions.' },
+  damaged:          { label: 'Issue Reported',            msg: 'We have identified an issue with your shipment. Our team will contact you shortly to resolve this.' },
+};
+
+async function sendStatusEmail(order, newStatus) {
+  if (!EMAILJS_CONFIGURED) return; // silently skip if not set up yet
+  var sm = STATUS_MESSAGES[newStatus];
+  if (!sm) return;
+  var c = order.client || {};
+  var s = order.shipment || {};
+  if (!c.email) return;
+
+  var params = {
+    to_email:     c.email,
+    to_name:      c.name || 'Customer',
+    order_id:     order.id,
+    status_label: sm.label,
+    route:        (s.from || '?') + ' → ' + (s.to || '?'),
+    message:      sm.msg,
+    portal_url:   'https://hexalog.eu/portal.html',
+  };
+
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
+    console.log('Email sent to', c.email, 'for status:', newStatus);
+  } catch(e) {
+    console.warn('EmailJS send failed:', e);
+  }
+}
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:#070C18;color:#E4EAFF;min-height:100vh;line-height:1.6}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0B1220}::-webkit-scrollbar-thumb{background:#1A3F8F;border-radius:3px}
+a{text-decoration:none;color:inherit}
+input,textarea,button,select{font-family:inherit}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(26,63,143,.25) 0%,transparent 65%),#070C18}
+.login-box{background:#121A2E;border:1px solid rgba(26,63,143,.4);border-radius:20px;padding:48px 44px;max-width:420px;width:100%;text-align:center}
+.login-box h1{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;margin:16px 0 6px}
+.login-box p{color:#8094B8;font-size:.88rem;margin-bottom:28px}
+.logo-text{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,#4A9EFF,#2E6ADB,#F5A623);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#F5A623;box-shadow:0 0 8px #F5A623;margin-left:2px;vertical-align:middle;position:relative;top:-3px}
+.ff{position:relative;margin-bottom:12px}
+.ff input{width:100%;background:#0B1220;border:1px solid rgba(255,255,255,.08);color:#E4EAFF;font-size:.9rem;padding:15px 13px 7px;border-radius:8px;outline:none;transition:border-color .2s}
+.ff input:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.1)}
+.ff label{position:absolute;left:13px;top:13px;font-size:.85rem;color:#3D5080;pointer-events:none;transition:all .2s}
+.ff input:focus~label,.ff input:not(:placeholder-shown)~label{top:5px;font-size:.68rem;color:#FFB940;letter-spacing:.04em}
+.btn-login{width:100%;padding:14px;background:linear-gradient(135deg,#1A3F8F,#2E6ADB);border:none;color:#fff;font-weight:700;font-size:.95rem;border-radius:10px;cursor:pointer;transition:all .3s;margin-top:4px}
+.btn-login:hover{box-shadow:0 6px 24px rgba(26,63,143,.5)}
+.login-err{display:none;color:#FF6B6B;font-size:.8rem;margin-top:8px}
+.admin-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.25);color:#FFB940;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:99px;margin-bottom:18px}
+
+/* DASHBOARD */
+.dashboard{display:none}
+/* Top nav */
+.top-nav{background:rgba(7,12,24,.97);border-bottom:1px solid rgba(26,63,143,.3);padding:0 28px;height:66px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+.nav-left{display:flex;align-items:center;gap:14px}
+.admin-tag{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#FF6B6B;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);padding:3px 10px;border-radius:99px}
+.nav-actions{display:flex;align-items:center;gap:10px}
+.btn-sm{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#8094B8;font-size:.78rem;padding:7px 14px;border-radius:7px;cursor:pointer;transition:all .2s}
+.btn-sm:hover{border-color:rgba(255,255,255,.2);color:#E4EAFF}
+.btn-sm.danger:hover{border-color:rgba(255,107,107,.4);color:#FF6B6B}
+
+/* Layout */
+.body-wrap{max-width:1300px;margin:0 auto;padding:28px 24px 80px;display:flex;gap:24px;align-items:flex-start}
+.sidebar{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:14px;position:sticky;top:90px}
+.main-panel{flex:1;min-width:0;display:flex;flex-direction:column;gap:20px}
+@media(max-width:900px){.body-wrap{flex-direction:column}.sidebar{width:100%;position:static}}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:700px){.stats-row{grid-template-columns:1fr 1fr}}
+.stat-card{background:#121A2E;border:1px solid rgba(26,63,143,.3);border-radius:12px;padding:16px;text-align:center}
+.stat-num{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,#2E6ADB,#F5A623);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.stat-lbl{font-size:.7rem;color:#8094B8;margin-top:4px;text-transform:uppercase;letter-spacing:.04em}
+
+/* Filter sidebar */
+.filter-card{background:#121A2E;border:1px solid rgba(26,63,143,.3);border-radius:12px;padding:18px}
+.filter-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8094B8;margin-bottom:12px}
+.filter-btns{display:flex;flex-direction:column;gap:4px}
+.fb{background:transparent;border:none;color:#8094B8;font-size:.83rem;padding:8px 10px;border-radius:7px;cursor:pointer;text-align:left;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
+.fb:hover{background:rgba(255,255,255,.04);color:#E4EAFF}
+.fb.active{background:rgba(26,63,143,.18);color:#E4EAFF}
+.fb-count{font-size:.7rem;background:rgba(255,255,255,.07);padding:2px 7px;border-radius:99px}
+
+/* Search */
+.search-row{display:flex;gap:10px;align-items:center}
+.search-input{flex:1;background:#121A2E;border:1px solid rgba(26,63,143,.3);color:#E4EAFF;font-size:.88rem;padding:11px 14px;border-radius:9px;outline:none;transition:border-color .2s}
+.search-input:focus{border-color:#F5A623}
+
+/* Order list */
+.orders-list{display:flex;flex-direction:column;gap:10px}
+.order-row{background:#121A2E;border:1px solid rgba(26,63,143,.25);border-radius:12px;padding:16px 20px;cursor:pointer;transition:all .25s;display:grid;grid-template-columns:auto 1fr auto auto;gap:16px;align-items:center}
+.order-row:hover{border-color:rgba(245,166,35,.35);background:#172035}
+.order-row.active{border-color:#F5A623;background:#172035}
+.or-id{font-family:'Space Grotesk',sans-serif;font-size:.95rem;font-weight:700;color:#FFB940;white-space:nowrap}
+.or-info{min-width:0}
+.or-name{font-size:.88rem;font-weight:600;color:#E4EAFF;margin-bottom:2px}
+.or-route{font-size:.75rem;color:#8094B8}
+.or-price{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;color:#E4EAFF;white-space:nowrap}
+.or-date{font-size:.72rem;color:#3D5080;white-space:nowrap}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.s-pending{background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);color:#FFB940}
+.s-confirmed{background:rgba(26,63,143,.18);border:1px solid rgba(46,106,219,.35);color:#7EB3FF}
+.s-picked_up{background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);color:#64B4FF}
+.s-in_transit{background:rgba(130,100,255,.1);border:1px solid rgba(130,100,255,.3);color:#A080FF}
+.s-out_for_delivery{background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.4);color:#FFB940}
+.s-delivered{background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.25);color:#00D4AA}
+.s-damaged{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:#FF6B6B}
+.s-waiting_customer{background:rgba(255,200,50,.1);border:1px solid rgba(255,200,50,.3);color:#FFC832}
+.s-cancelled{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#8094B8}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.or-paid{font-size:.68rem;font-weight:700;color:#00D4AA;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.2);padding:2px 7px;border-radius:99px;white-space:nowrap}
+@media(max-width:640px){.order-row{grid-template-columns:1fr 1fr;gap:8px}}
+
+/* Detail panel */
+.detail-panel{background:#121A2E;border:1px solid rgba(26,63,143,.3);border-radius:16px;overflow:hidden;display:none}
+.dp-head{padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.dp-id{font-family:'Space Grotesk',sans-serif;font-size:1.15rem;font-weight:800;color:#FFB940}
+.dp-body{padding:24px;display:flex;flex-direction:column;gap:20px}
+.dp-section{background:#0B1220;border-radius:10px;padding:16px}
+.dp-sec-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#3D5080;margin-bottom:12px}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:560px){.kv-grid{grid-template-columns:1fr}}
+.kv{display:flex;flex-direction:column;gap:2px}
+.kv-l{font-size:.68rem;color:#3D5080;text-transform:uppercase;letter-spacing:.05em}
+.kv-v{font-size:.88rem;font-weight:600;color:#E4EAFF}
+.kv-v.hl{color:#FFB940}
+
+/* Status updater */
+.status-updater{background:#0B1220;border-radius:10px;padding:18px;border:1px solid rgba(245,166,35,.1)}
+.su-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#FFB940;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.status-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:500px){.status-btns{grid-template-columns:1fr 1fr}}
+.stt-btn{background:#121A2E;border:1px solid rgba(255,255,255,.07);color:#8094B8;font-size:.75rem;font-weight:600;padding:9px 6px;border-radius:8px;cursor:pointer;transition:all .2s;text-align:center;line-height:1.3}
+.stt-btn:hover{border-color:rgba(245,166,35,.4);color:#E4EAFF;background:rgba(26,63,143,.1)}
+.stt-btn.active{border-color:#F5A623;background:rgba(26,63,143,.2);color:#FFB940}
+.note-row{display:flex;gap:10px;margin-top:12px;align-items:flex-start}
+.note-row textarea{flex:1;background:#121A2E;border:1px solid rgba(255,255,255,.08);color:#E4EAFF;font-size:.83rem;padding:10px 12px;border-radius:8px;outline:none;resize:vertical;min-height:60px}
+.note-row textarea:focus{border-color:#F5A623}
+.btn-update{background:linear-gradient(135deg,#1A3F8F,#2E6ADB);border:none;color:#fff;font-weight:700;font-size:.83rem;padding:10px 18px;border-radius:8px;cursor:pointer;transition:all .3s;white-space:nowrap}
+.btn-update:hover{box-shadow:0 4px 14px rgba(26,63,143,.5)}
+
+/* POD Upload */
+.pod-upload{background:#0B1220;border-radius:10px;padding:16px;border:2px dashed rgba(26,63,143,.3);transition:border-color .2s}
+.pod-upload:hover{border-color:rgba(245,166,35,.4)}
+.pod-upload.has-pod{border-color:rgba(0,212,170,.3);border-style:solid}
+.pod-upload label{display:flex;align-items:center;gap:12px;cursor:pointer}
+.pod-upload input[type=file]{display:none}
+.pod-ico{width:40px;height:40px;background:rgba(26,63,143,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pod-ico svg{width:20px;height:20px;color:#7EB3FF}
+.pod-txt strong{display:block;font-size:.85rem;font-weight:700;color:#E4EAFF;margin-bottom:2px}
+.pod-txt small{font-size:.73rem;color:#8094B8}
+.pod-uploaded{display:flex;align-items:center;gap:10px;color:#00D4AA;font-size:.85rem;font-weight:600}
+
+/* Timeline */
+.tl-mini{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto}
+.tl-evt{display:flex;align-items:flex-start;gap:10px;font-size:.8rem;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.tl-evt:last-child{border-bottom:none}
+.tl-status{font-weight:700;color:#FFB940;white-space:nowrap;min-width:120px}
+.tl-ts{color:#3D5080;font-size:.72rem;white-space:nowrap}
+.tl-note-t{color:#8094B8;font-size:.76rem;font-style:italic}
+
+/* Empty */
+.empty{text-align:center;padding:60px 20px;color:#3D5080}
+.empty svg{opacity:.25;margin-bottom:14px}
+
+/* NEW ORDER BUTTON */
+.btn-new{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1A3F8F,#2E6ADB);border:none;color:#fff;font-weight:700;font-size:.83rem;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .3s}
+.btn-new:hover{box-shadow:0 4px 14px rgba(26,63,143,.5)}
+
+/* Accept / Reject bar */
+.accept-bar{background:linear-gradient(135deg,rgba(26,63,143,.18),rgba(245,166,35,.06));border:1px solid rgba(245,166,35,.35);border-radius:12px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.accept-bar-info strong{display:block;font-size:.95rem;font-weight:700;color:#E4EAFF;margin-bottom:3px}
+.accept-bar-info span{font-size:.8rem;color:#8094B8}
+.accept-bar-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-accept{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#00a882,#00D4AA);border:none;color:#fff;font-weight:800;font-size:.9rem;padding:11px 24px;border-radius:9px;cursor:pointer;transition:all .3s;box-shadow:0 4px 18px rgba(0,212,170,.25)}
+.btn-accept:hover{box-shadow:0 6px 24px rgba(0,212,170,.45);transform:translateY(-1px)}
+.btn-reject{display:inline-flex;align-items:center;gap:8px;background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.3);color:#FF6B6B;font-weight:700;font-size:.88rem;padding:11px 20px;border-radius:9px;cursor:pointer;transition:all .3s}
+.btn-reject:hover{background:rgba(255,107,107,.2);border-color:rgba(255,107,107,.5)}
+.btn-ask{display:inline-flex;align-items:center;gap:8px;background:rgba(255,200,50,.08);border:1px solid rgba(255,200,50,.3);color:#FFC832;font-weight:700;font-size:.88rem;padding:11px 20px;border-radius:9px;cursor:pointer;transition:all .3s}
+.btn-ask:hover{background:rgba(255,200,50,.15)}
+.new-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.4);color:#FFB940;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:99px;animation:newPulse 2s ease-in-out infinite}
+@keyframes newPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,.4)}50%{box-shadow:0 0 0 6px rgba(245,166,35,0)}}
+
+/* Email preview modal */
+.email-preview{background:#0B1220;border:1px solid rgba(26,63,143,.3);border-radius:10px;padding:16px;font-size:.82rem;line-height:1.7;color:#8094B8;white-space:pre-wrap;max-height:220px;overflow-y:auto;text-align:left;margin:12px 0}
+.email-preview strong{color:#E4EAFF}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-bg.open{opacity:1;pointer-events:all}
+.modal{background:#121A2E;border:1px solid rgba(26,63,143,.4);border-radius:16px;padding:32px;max-width:500px;width:100%;transform:scale(.92);transition:transform .3s;position:relative;max-height:90vh;overflow-y:auto}
+.modal-bg.open .modal{transform:scale(1)}
+.modal-x{position:absolute;top:12px;right:12px;width:28px;height:28px;background:rgba(255,255,255,.06);border:none;color:#8094B8;font-size:1.1rem;border-radius:6px;cursor:pointer}
+.modal h3{font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-grid .span2{grid-column:1/-1}
+/* ── YETI LOGIN FORM ── */
+#yetiForm{width:100%;margin-top:16px}
+.svgContainer{position:relative;width:170px;height:170px;margin:0 auto 20px;border-radius:50%;pointer-events:none}
+.svgContainer div{position:relative;width:100%;height:0;overflow:hidden;border-radius:50%;padding-bottom:100%}
+.svgContainer .mySVG{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.svgContainer:after{content:"";position:absolute;top:0;left:0;z-index:10;width:inherit;height:inherit;box-sizing:border-box;border:solid 3px #1A3F8F;border-radius:50%;box-shadow:0 0 20px rgba(26,63,143,.4)}
+.yeti-input-group{margin:0 0 18px;padding:0;position:relative}
+.yeti-input-group label:first-child{display:block;font-size:.78rem;font-weight:700;color:#3A6FCC;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.yeti-input-group input[type=email],.yeti-input-group input[type=password],.yeti-input-group input[type=text]{display:block;width:100%;padding:12px 14px;background:#0B1220;border:1.5px solid rgba(255,255,255,.1);border-radius:8px;color:#E4EAFF;font-size:1rem;font-weight:600;outline:none;box-sizing:border-box;transition:border-color .2s,box-shadow .2s;font-family:inherit}
+.yeti-input-group input:focus{border-color:#F5A623;box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+.yeti-ig1{position:relative}
+.yeti-helper{position:absolute;top:34px;left:14px;font-size:1rem;color:#3A6FCC;opacity:.5;pointer-events:none;transition:transform .2s ease-out,opacity .2s}
+.yeti-ig1.focusWithText .yeti-helper{transform:translateY(-10px) scale(.62);opacity:.8;transform-origin:0 0}
+#showPasswordToggle{display:block;padding:0 0 0 1.3em;position:absolute;top:6px;right:0;font-size:.82rem;color:#3A6FCC;cursor:pointer}
+#showPasswordToggle input{position:absolute;z-index:-1;opacity:0}
+.yeti-indicator{position:absolute;top:0;left:0;height:.85em;width:.85em;background:#0B1220;border:solid 2px #1A3F8F;border-radius:3px}
+.yeti-indicator:after{content:"";position:absolute;left:.22em;top:.02em;width:.18em;height:.45em;border:solid #F5A623;border-width:0 2.5px 2.5px 0;transform:rotate(45deg);visibility:hidden}
+#showPasswordCheck:checked~.yeti-indicator:after{visibility:visible}
+.yeti-submit{width:100%;padding:13px;background:linear-gradient(135deg,#1A3F8F,#2E6ADB);border:none;border-radius:8px;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s;margin-top:4px;font-family:inherit}
+.yeti-submit:hover{opacity:.9}
+
+.modal select{width:100%;background:#0B1220;border:1px solid rgba(255,255,255,.08);color:#E4EAFF;font-size:.88rem;padding:11px 12px;border-radius:8px;outline:none;box-sizing:border-box}
+.modal select:focus{border-color:#F5A623}
+.modal select:disabled{opacity:.4;cursor:not-allowed}
+.modal-actions{display:flex;gap:10px;margin-top:16px}
+.btn-cancel-m{flex:1;background:transparent;border:1px solid rgba(255,255,255,.1);color:#8094B8;padding:11px;border-radius:8px;cursor:pointer}
+.btn-save-m{flex:2;background:linear-gradient(135deg,#1A3F8F,#2E6ADB);border:none;color:#fff;font-weight:700;padding:11px;border-radius:8px;cursor:pointer}
+.no-section-label{font-size:.7rem;font-weight:700;color:#3A6FCC;letter-spacing:.08em;text-transform:uppercase;padding:10px 0 8px;border-top:1px solid rgba(26,63,143,.2);margin-bottom:10px}
+.no-lbl{font-size:.7rem;color:#3D5080;text-transform:uppercase;letter-spacing:.05em}
+.no-chk{display:flex;align-items:center;gap:7px;font-size:.82rem;color:#8094B8;cursor:pointer;padding:7px 12px;background:#0B1220;border:1px solid rgba(255,255,255,.07);border-radius:8px}
+.no-chk input{accent-color:#F5A623;width:14px;height:14px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="loginWrap" class="login-wrap">
+  <div class="login-box">
+    <span class="logo-text">HexaLog</span><span class="logo-dot"></span>
+    <div class="admin-badge">&#9881; Admin TMS</div>
+
+    <form id="yetiForm" autocomplete="off" onsubmit="return false;">
+      <div class="svgContainer">
+        <div>
+          <svg class="mySVG" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
+            <defs><circle id="armMaskPath" cx="100" cy="100" r="100"/></defs>
+            <clipPath id="armMask"><use xlink:href="#armMaskPath" overflow="visible"/></clipPath>
+            <circle cx="100" cy="100" r="100" fill="#1A3F8F"/>
+            <g class="body">
+              <path class="bodyBGchanged" style="display:none;" fill="#0D1829" d="M200,122h-35h-14.9V72c0-27.6-22.4-50-50-50s-50,22.4-50,50v50H35.8H0l0,91h200L200,122z"/>
+              <path class="bodyBGnormal" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="#0D1829" d="M200,158.5c0-20.2-14.8-36.5-35-36.5h-14.9V72.8c0-27.4-21.7-50.4-49.1-50.8c-28-0.5-50.9,22.1-50.9,50v50H35.8C16,122,0,138,0,157.8L0,213h200L200,158.5z"/>
+              <path fill="#152035" d="M100,156.4c-22.9,0-43,11.1-54.1,27.7c15.6,10,34.2,15.9,54.1,15.9s38.5-5.8,54.1-15.9C143,167.5,122.9,156.4,100,156.4z"/>
+            </g>
+            <g class="earL">
+              <g class="outerEar" fill="#152035" stroke="#3A6FCC" stroke-width="2.5">
+                <circle cx="47" cy="83" r="11.5"/>
+                <path d="M46.3 78.9c-2.3 0-4.1 1.9-4.1 4.1 0 2.3 1.9 4.1 4.1 4.1" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <g class="earHair">
+                <rect x="51" y="64" fill="#0D1829" width="15" height="35"/>
+                <path d="M53.4 62.8C48.5 67.4 45 72.2 42.8 77c3.4-.1 6.8-.1 10.1.1-4 3.7-6.8 7.6-8.2 11.6 2.1 0 4.2 0 6.3.2-2.6 4.1-3.8 8.3-3.7 12.5 1.2-.7 3.4-1.4 5.2-1.9" fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </g>
+            <g class="earR">
+              <g class="outerEar">
+                <circle fill="#152035" stroke="#3A6FCC" stroke-width="2.5" cx="153" cy="83" r="11.5"/>
+                <path fill="#152035" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M153.7,78.9c2.3,0,4.1,1.9,4.1,4.1c0,2.3-1.9,4.1-4.1,4.1"/>
+              </g>
+              <g class="earHair">
+                <rect x="134" y="64" fill="#0D1829" width="15" height="35"/>
+                <path fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M146.6,62.8c4.9,4.6,8.4,9.4,10.6,14.2c-3.4-0.1-6.8-0.1-10.1,0.1c4,3.7,6.8,7.6,8.2,11.6c-2.1,0-4.2,0-6.3,0.2c2.6,4.1,3.8,8.3,3.7,12.5c-1.2-0.7-3.4-1.4-5.2-1.9"/>
+              </g>
+            </g>
+            <path class="chin" d="M84.1 121.6c2.7 2.9 6.1 5.4 9.8 7.5l.9-4.5c2.9 2.5 6.3 4.8 10.2 6.5 0-1.9-.1-3.9-.2-5.8 3 1.2 6.2 2 9.7 2.5-.3-2.1-.7-4.1-1.2-6.1" fill="none" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path class="face" fill="#152035" d="M134.5,46v35.5c0,21.815-15.446,39.5-34.5,39.5s-34.5-17.685-34.5-39.5V46"/>
+            <path class="hair" fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M81.457,27.929c1.755-4.084,5.51-8.262,11.253-11.77c0.979,2.565,1.883,5.14,2.712,7.723c3.162-4.265,8.626-8.27,16.272-11.235c-0.737,3.293-1.588,6.573-2.554,9.837c4.857-2.116,11.049-3.64,18.428-4.156c-2.403,3.23-5.021,6.391-7.852,9.474"/>
+            <g class="eyebrow">
+              <path fill="#0D1829" d="M138.142,55.064c-4.93,1.259-9.874,2.118-14.787,2.599c-0.336,3.341-0.776,6.689-1.322,10.037c-4.569-1.465-8.909-3.222-12.996-5.226c-0.98,3.075-2.07,6.137-3.267,9.179c-5.514-3.067-10.559-6.545-15.097-10.329c-1.806,2.889-3.745,5.73-5.816,8.515c-7.916-4.124-15.053-9.114-21.296-14.738l1.107-11.768h73.475V55.064z"/>
+              <path fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M63.56,55.102c6.243,5.624,13.38,10.614,21.296,14.738c2.071-2.785,4.01-5.626,5.816-8.515c4.537,3.785,9.583,7.263,15.097,10.329c1.197-3.043,2.287-6.104,3.267-9.179c4.087,2.004,8.427,3.761,12.996,5.226c0.545-3.348,0.986-6.696,1.322-10.037c4.913-0.481,9.857-1.34,14.787-2.599"/>
+            </g>
+            <g class="eyeL"><circle cx="85.5" cy="78.5" r="3.5" fill="#F5A623"/><circle cx="84" cy="76" r="1" fill="#fff"/></g>
+            <g class="eyeR"><circle cx="114.5" cy="78.5" r="3.5" fill="#F5A623"/><circle cx="113" cy="76" r="1" fill="#fff"/></g>
+            <g class="mouth">
+              <path class="mouthBG" fill="#F5A623" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
+              <path style="display:none;" class="mouthSmallBG" fill="#F5A623" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
+              <path style="display:none;" class="mouthMediumBG" d="M95,104.2c-4.5,0-8.2-3.7-8.2-8.2v-2c0-1.2,1-2.2,2.2-2.2h22c1.2,0,2.2,1,2.2,2.2v2c0,4.5-3.7,8.2-8.2,8.2H95z"/>
+              <path style="display:none;" class="mouthLargeBG" d="M100 110.2c-9 0-16.2-7.3-16.2-16.2 0-2.3 1.9-4.2 4.2-4.2h24c2.3 0 4.2 1.9 4.2 4.2 0 9-7.2 16.2-16.2 16.2z" fill="#F5A623" stroke="#3A6FCC" stroke-linejoin="round" stroke-width="2.5"/>
+              <defs><path id="mouthMaskPath" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/></defs>
+              <clipPath id="mouthMask"><use xlink:href="#mouthMaskPath" overflow="visible"/></clipPath>
+              <g clip-path="url(#mouthMask)"><g class="tongue"><circle cx="100" cy="107" r="8" fill="#cc4a6c"/><ellipse class="tongueHighlight" cx="100" cy="100.5" rx="3" ry="1.5" opacity=".1" fill="#fff"/></g></g>
+              <path clip-path="url(#mouthMask)" class="tooth" style="fill:#E4EAFF;" d="M106,97h-4c-1.1,0-2-0.9-2-2v-2h8v2C108,96.1,107.1,97,106,97z"/>
+              <path class="mouthOutline" fill="none" stroke="#3A6FCC" stroke-width="2.5" stroke-linejoin="round" d="M100.2,101c-0.4,0-1.4,0-1.8,0c-2.7-0.3-5.3-1.1-8-2.5c-0.7-0.3-0.9-1.2-0.6-1.8c0.2-0.5,0.7-0.7,1.2-0.7c0.2,0,0.5,0.1,0.6,0.2c3,1.5,5.8,2.3,8.6,2.3s5.7-0.7,8.6-2.3c0.2-0.1,0.4-0.2,0.6-0.2c0.5,0,1,0.3,1.2,0.7c0.4,0.7,0.1,1.5-0.6,1.9c-2.6,1.4-5.3,2.2-7.9,2.5C101.7,101,100.5,101,100.2,101z"/>
+            </g>
+            <path class="nose" d="M97.7 79.9h4.7c1.9 0 3 2.2 1.9 3.7l-2.3 3.3c-.9 1.3-2.9 1.3-3.8 0l-2.3-3.3c-1.3-1.6-.2-3.7 1.8-3.7z" fill="#F5A623"/>
+            <g class="arms" clip-path="url(#armMask)">
+              <g class="armL" style="visibility:hidden;">
+                <polygon fill="#152035" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="121.3,98.4 111,59.7 149.8,49.3 169.8,85.4"/>
+                <path fill="#152035" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M134.4,53.5l19.3-5.2c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-10.3,2.8"/>
+                <path fill="#152035" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M150.9,59.4l26-7c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-21.3,5.7"/>
+                <g class="twoFingers">
+                  <path fill="#152035" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M158.3,67.8l23.1-6.2c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-23.1,6.2"/>
+                  <path fill="#1A3F8F" d="M180.1,65l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L180.1,65z"/>
+                  <path fill="#152035" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="M160.8,77.5l19.4-5.2c2.7-0.7,5.4,0.9,6.1,3.5v0c0.7,2.7-0.9,5.4-3.5,6.1l-18.3,4.9"/>
+                  <path fill="#1A3F8F" d="M178.8,75.7l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L178.8,75.7z"/>
+                </g>
+                <path fill="#1A3F8F" d="M175.5,55.9l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L175.5,55.9z"/>
+                <path fill="#1A3F8F" d="M152.1,50.4l2.2-0.6c1.1-0.3,2.2,0.3,2.4,1.4v0c0.3,1.1-0.3,2.2-1.4,2.4l-2.2,0.6L152.1,50.4z"/>
+                <path fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M123.5,97.8c-41.4,14.9-84.1,30.7-108.2,35.5L1.2,81c33.5-9.9,71.9-16.5,111.9-21.8"/>
+                <path fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M108.5,60.4c7.7-5.3,14.3-8.4,22.8-13.2c-2.4,5.3-4.7,10.3-6.7,15.1c4.3,0.3,8.4,0.7,12.3,1.3c-4.2,5-8.1,9.6-11.5,13.9c3.1,1.1,6,2.4,8.7,3.8c-1.4,2.9-2.7,5.8-3.9,8.5c2.5,3.5,4.6,7.2,6.3,11c-4.9-0.8-9-0.7-16.2-2.7"/>
+                <path fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M94.5,103.8c-0.6,4-3.8,8.9-9.4,14.7c-2.6-1.8-5-3.7-7.2-5.7c-2.5,4.1-6.6,8.8-12.2,14c-1.9-2.2-3.4-4.5-4.5-6.9c-4.4,3.3-9.5,6.9-15.4,10.8c-0.2-3.4,0.1-7.1,1.1-10.9"/>
+                <path fill="#0D1829" stroke="#3A6FCC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M97.5,63.9c-1.7-2.4-5.9-4.1-12.4-5.2c-0.9,2.2-1.8,4.3-2.5,6.5c-3.8-1.8-9.4-3.1-17-3.8c0.5,2.3,1.2,4.5,1.9,6.8c-5-0.6-11.2-0.9-18.4-1c2,2.9,0.9,3.5,3.9,6.2"/>
+              </g>
+              <g class="armR" style="visibility:hidden;">
+                <path fill="#152035" stroke="#3A6FCC" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2.5" d="M265.4 97.3l10.4-38.6-38.9-10.5-20 36.1z"/>
+                <path fill="#152035" stroke="#3A6FCC" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2.5" d="M252.4 52.4L233 47.2c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l10.3 2.8M226 76.4l-19.4-5.2c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l18.3 4.9M228.4 66.7l-23.1-6.2c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l23.1 6.2M235.8 58.3l-26-7c-2.7-.7-5.4.9-6.1 3.5-.7 2.7.9 5.4 3.5 6.1l21.3 5.7"/>
+                <path fill="#1A3F8F" d="M207.9 74.7l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8zM206.7 64l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8zM211.2 54.8l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8zM234.6 49.4l-2.2-.6c-1.1-.3-2.2.3-2.4 1.4-.3 1.1.3 2.2 1.4 2.4l2.2.6 1-3.8z"/>
+                <path fill="#0D1829" stroke="#3A6FCC" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M263.3 96.7c41.4 14.9 84.1 30.7 108.2 35.5l14-52.3C352 70 313.6 63.5 273.6 58.1"/>
+                <path fill="#0D1829" stroke="#3A6FCC" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M278.2 59.3l-18.6-10 2.5 11.9-10.7 6.5 9.9 8.7-13.9 6.4 9.1 5.9-13.2 9.2 23.1-.9M284.5 100.1c-.4 4 1.8 8.9 6.7 14.8 3.5-1.8 6.7-3.6 9.7-5.5 1.8 4.2 5.1 8.9 10.1 14.1 2.7-2.1 5.1-4.4 7.1-6.8 4.1 3.4 9 7 14.7 11 1.2-3.4 1.8-7 1.7-10.9M314 66.7s5.4-5.7 12.6-7.4c1.7 2.9 3.3 5.7 4.9 8.6 3.8-2.5 9.8-4.4 18.2-5.7.1 3.1.1 6.1 0 9.2 5.5-1 12.5-1.6 20.8-1.9-1.4 3.9-2.5 8.4-2.5 8.4"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="yeti-input-group yeti-ig1" id="yetiIG1">
+        <label for="loginEmail" id="loginEmailLabel">Username</label>
+        <input type="email" id="loginEmail" autocomplete="off" maxlength="254"/>
+        <p class="yeti-helper">admin@hexalog.eu</p>
+      </div>
+
+      <div class="yeti-input-group yeti-ig2">
+        <label for="loginPassword" id="loginPasswordLabel">Password</label>
+        <input type="password" id="loginPassword" autocomplete="off"/>
+        <label id="showPasswordToggle" for="showPasswordCheck">Show
+          <input id="showPasswordCheck" type="checkbox"/>
+          <div class="yeti-indicator"></div>
+        </label>
+      </div>
+
+      <p id="loginErr" class="login-err" style="margin-bottom:10px">Incorrect password. Please try again.</p>
+
+      <button class="yeti-submit" id="btnAdminLogin" type="button">Login to TMS</button>
+    </form>
+  </div>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="dashboard" class="dashboard">
+
+  <nav class="top-nav">
+    <div class="nav-left">
+      <span class="logo-text">HexaLog</span><span class="logo-dot"></span>
+      <span class="admin-tag">⚙ Admin TMS</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-new" id="btnNewOrder">+ New Order</button>
+      <a href="index.html" class="btn-sm">← Website</a>
+      <button class="btn-sm danger" id="btnAdminLogout">Log out</button>
+    </div>
+  </nav>
+
+  <div class="body-wrap">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <!-- Stats -->
+      <div class="stats-row" style="grid-template-columns:1fr 1fr">
+        <div class="stat-card"><div class="stat-num" id="sTotal">0</div><div class="stat-lbl">Total Orders</div></div>
+        <div class="stat-card"><div class="stat-num" id="sActive">0</div><div class="stat-lbl">Active</div></div>
+        <div class="stat-card"><div class="stat-num" id="sDelivered">0</div><div class="stat-lbl">Delivered</div></div>
+        <div class="stat-card"><div class="stat-num" id="sRevenue">€0</div><div class="stat-lbl">Revenue</div></div>
+      </div>
+
+      <!-- Waitlist -->
+      <div class="filter-card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div class="filter-title" style="margin:0">📋 Launch Waitlist — <span id="wlCount">0</span> subscribers</div>
+          <button onclick="loadWaitlist()" style="background:rgba(26,63,143,.3);border:1px solid rgba(26,63,143,.5);color:#8094B8;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:.8rem">↻ Refresh</button>
+        </div>
+        <div id="wlList" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+          <p style="color:#3D5080;font-size:.85rem">Loading…</p>
+        </div>
+      </div>
+      <!-- Filters -->
+      <div class="filter-card">
+        <div class="filter-title">Filter by Status</div>
+        <div class="filter-btns" id="filterBtns"></div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-panel">
+
+      <!-- Search -->
+      <div class="search-row">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search by Order ID, name, email, route..."/>
+      </div>
+
+      <!-- Orders list -->
+      <div class="orders-list" id="ordersList"></div>
+
+      <!-- Detail panel -->
+      <div class="detail-panel" id="detailPanel"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- New Order Modal -->
+<div class="modal-bg" id="newOrderModal">
+  <div class="modal" style="max-width:680px">
+    <button class="modal-x" id="newOrderX">&times;</button>
+    <h3 style="margin-bottom:20px">&#43; Create New Order</h3>
+
+    <!-- CLIENT INFO -->
+    <div class="no-section-label">Client Information</div>
+    <div class="form-grid" style="margin-bottom:16px">
+      <div class="ff span2"><input type="text" id="no_name" placeholder=" " required/><label>Full Name *</label></div>
+      <div class="ff"><input type="email" id="no_email" placeholder=" " required/><label>Email *</label></div>
+      <div class="ff"><input type="tel" id="no_phone" placeholder=" "/><label>Phone</label></div>
+      <div class="ff"><input type="text" id="no_company" placeholder=" "/><label>Company</label></div>
+      <div class="ff">
+        <select id="no_otype" style="width:100%;background:#0B1220;border:1px solid rgba(255,255,255,.08);color:#E4EAFF;font-size:.88rem;padding:11px 12px;border-radius:8px;outline:none">
+          <option value="B2B">B2B — Business</option>
+          <option value="B2C">B2C — Consumer</option>
+        </select>
+        <label style="font-size:.7rem;color:#3D5080;text-transform:uppercase;letter-spacing:.05em;margin-top:4px">Order Type</label>
+      </div>
+    </div>
+
+    <!-- PICKUP -->
+    <div class="no-section-label" style="border-top-color:#1A3F8F">&#8599; Pickup Details</div>
+    <div class="form-grid" style="margin-bottom:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label class="no-lbl">Country *</label>
+        <select id="no_from" onchange="noPopCity('no_from','no_fromCity')">
+          <option value="">-- Country --</option>
+          <option value="BE">&#127463;&#127466; Belgium</option>
+          <option value="NL">&#127475;&#127473; Netherlands</option>
+          <option value="LU">&#127473;&#127482; Luxembourg</option>
+          <option value="FR">&#127467;&#127479; France</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label class="no-lbl">City *</label>
+        <select id="no_fromCity" disabled>
+          <option value="">-- Select country first --</option>
+        </select>
+      </div>
+      <div class="ff span2"><input type="text" id="no_pickupAddr" placeholder=" "/><label>Street &amp; Number</label></div>
+      <div class="ff"><input type="text" id="no_pickupContact" placeholder=" "/><label>Contact Name</label></div>
+      <div class="ff"><input type="tel" id="no_pickupPhone" placeholder=" "/><label>Contact Phone</label></div>
+    </div>
+
+    <!-- DELIVERY -->
+    <div class="no-section-label" style="border-top-color:#00D4AA">&#128205; Delivery Details</div>
+    <div class="form-grid" style="margin-bottom:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label class="no-lbl">Country *</label>
+        <select id="no_to" onchange="noPopCity('no_to','no_toCity')">
+          <option value="">-- Country --</option>
+          <option value="BE">&#127463;&#127466; Belgium</option>
+          <option value="NL">&#127475;&#127473; Netherlands</option>
+          <option value="LU">&#127473;&#127482; Luxembourg</option>
+          <option value="FR">&#127467;&#127479; France</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label class="no-lbl">City *</label>
+        <select id="no_toCity" disabled>
+          <option value="">-- Select country first --</option>
+        </select>
+      </div>
+      <div class="ff span2"><input type="text" id="no_deliveryAddr" placeholder=" "/><label>Street &amp; Number</label></div>
+      <div class="ff"><input type="text" id="no_deliveryContact" placeholder=" "/><label>Contact Name</label></div>
+      <div class="ff"><input type="tel" id="no_deliveryPhone" placeholder=" "/><label>Contact Phone</label></div>
+    </div>
+
+    <!-- SHIPMENT -->
+    <div class="no-section-label">Shipment Details</div>
+    <div class="form-grid" style="margin-bottom:16px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label class="no-lbl">Service</label>
+        <select id="no_svc">
+          <option value="LTL">LTL — Pallet (shared)</option>
+          <option value="FTL">FTL — Full Truck</option>
+          <option value="EXPRESS">Express 24h</option>
+          <option value="WEEKEND">Weekend Delivery</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <label class="no-lbl">Pallet Type</label>
+        <select id="no_palType">
+          <option value="Euro Pallet">Euro Pallet (120×80)</option>
+          <option value="Block Pallet">Block Pallet (120×100)</option>
+          <option value="Half Pallet">Half Pallet (80×60)</option>
+          <option value="Industry Pallet">Industry Pallet (120×120)</option>
+          <option value="Custom">Custom size</option>
+        </select>
+      </div>
+      <div class="ff"><input type="number" id="no_qty" placeholder=" " value="1" min="1"/><label>Quantity (pallets)</label></div>
+      <div class="ff"><input type="number" id="no_weight" placeholder=" "/><label>Weight per pallet (kg)</label></div>
+      <div class="ff"><input type="number" id="no_height" placeholder=" "/><label>Height (cm)</label></div>
+      <div class="ff"><input type="text" id="no_price" placeholder=" "/><label>Agreed Price (e.g. €85.00)</label></div>
+    </div>
+
+    <!-- EXTRAS & NOTES -->
+    <div class="no-section-label">Extras &amp; Notes</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <label class="no-chk"><input type="checkbox" id="no_tailLift"/> Tail lift</label>
+      <label class="no-chk"><input type="checkbox" id="no_insurance"/> Cargo insurance</label>
+      <label class="no-chk"><input type="checkbox" id="no_notify"/> SMS updates</label>
+      <label class="no-chk"><input type="checkbox" id="no_paid"/> Mark as paid</label>
+    </div>
+    <div class="form-grid">
+      <div class="ff span2"><textarea id="no_notes" placeholder="Internal notes, special instructions..." style="background:#0B1220;border:1px solid rgba(255,255,255,.08);color:#E4EAFF;font-size:.88rem;padding:11px 12px;border-radius:8px;outline:none;width:100%;box-sizing:border-box;resize:vertical;min-height:70px;font-family:inherit"></textarea></div>
+    </div>
+
+    <p id="noErr" style="color:#FF6B6B;font-size:.8rem;margin-top:10px;display:none"></p>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-cancel-m" id="newOrderCancel">Cancel</button>
+      <button class="btn-save-m" id="newOrderSave">&#43; Create Order</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+var ADMIN_PW = 'Zwiki2001';
+var CNAME = {BE:'Belgium',NL:'Netherlands',LU:'Luxembourg',FR:'France'};
+var ALL_STATUSES = ['pending','confirmed','picked_up','in_transit','out_for_delivery','delivered','damaged','waiting_customer','cancelled'];
+var STATUS_MAP = {
+  pending:          {label:'Pending',               cls:'s-pending'},
+  confirmed:        {label:'Confirmed',             cls:'s-confirmed'},
+  picked_up:        {label:'Picked Up',             cls:'s-picked_up'},
+  in_transit:       {label:'In Transit',            cls:'s-in_transit'},
+  out_for_delivery: {label:'Out for Delivery',      cls:'s-out_for_delivery'},
+  delivered:        {label:'Delivered',             cls:'s-delivered'},
+  damaged:          {label:'Damaged',               cls:'s-damaged'},
+  waiting_customer: {label:'Waiting Customer',      cls:'s-waiting_customer'},
+  cancelled:        {label:'Cancelled',             cls:'s-cancelled'}
+};
+var currentFilter = 'all';
+var currentOrderId = null;
+
+// ── SUPABASE ──────────────────────────────────────────────────
+var _sb = supabase.createClient('https://mjcuhyujqpzgybbqeaxd.supabase.co','sb_publishable_1DZMiEy3eonWMiWKy7B_dA_t0IhBff0');
+var _orders = [];
+
+function dbToOrder(r){
+  return {id:r.id,status:r.status,createdAt:r.created_at,orderType:r.order_type,
+    client:r.client||{},shipment:r.shipment||{},price:r.price,paid:r.paid,pod:r.pod,timeline:r.timeline||[]};
+}
+function orderToDb(o){
+  return {id:o.id,status:o.status,created_at:o.createdAt,order_type:o.orderType||'B2B',
+    client:o.client,shipment:o.shipment,price:o.price,paid:o.paid||false,pod:o.pod||null,timeline:o.timeline||[]};
+}
+async function fetchOrders(){
+  var {data,error}=await _sb.from('orders').select('*').order('created_at',{ascending:false});
+  if(!error) _orders=data.map(dbToOrder);
+  return _orders;
+}
+async function loadWaitlist(){
+  var el=document.getElementById('wlList');
+  var countEl=document.getElementById('wlCount');
+  el.innerHTML='<p style="color:#3D5080;font-size:.85rem">Loading…</p>';
+  var {data,error}=await _sb.from('waitlist').select('*').order('created_at',{ascending:false});
+  if(error||!data){el.innerHTML='<p style="color:#e05252;font-size:.82rem">Could not load waitlist.</p>';return;}
+  countEl.textContent=data.length;
+  if(data.length===0){el.innerHTML='<p style="color:#3D5080;font-size:.85rem">No subscribers yet.</p>';return;}
+  el.innerHTML=data.map(function(r){
+    var d=new Date(r.created_at);
+    var ds=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);border:1px solid rgba(26,63,143,.2);border-radius:8px;padding:8px 12px;font-size:.82rem">'
+      +'<span style="color:#E4EAFF">'+r.email+'</span>'
+      +'<span style="color:#3D5080;white-space:nowrap;margin-left:10px">'+ds+'</span>'
+      +'</div>';
+  }).join('');
+}
+async function upsertOrder(o){
+  _orders=_orders.filter(function(x){return x.id!==o.id;});
+  _orders.unshift(o);
+  await _sb.from('orders').upsert(orderToDb(o));
+}
+function getOrders(){ return _orders; }
+function saveOrders(arr){ _orders=arr; }
+
+function fmtDate(ts){
+  if(!ts) return '—';
+  var d=new Date(ts);
+  return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+document.getElementById('btnAdminLogin').addEventListener('click', doLogin);
+document.getElementById('loginPassword').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+async function doLogin(){
+  var pw=document.getElementById('loginPassword').value;
+  if(pw===ADMIN_PW){
+    sessionStorage.setItem('hl_admin','1');
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    await fetchOrders();
+    loadDashboard();
+    loadWaitlist();
+    subscribeRealtime();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+document.getElementById('btnAdminLogout').addEventListener('click',function(){
+  sessionStorage.removeItem('hl_admin');
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('pwInput').value='';
+});
+
+// Auto-login
+if(sessionStorage.getItem('hl_admin')==='1'){
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  fetchOrders().then(function(){
+    loadDashboard();
+    loadWaitlist();
+    subscribeRealtime();
+  });
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+function loadDashboard(){
+  renderStats();
+  renderFilters();
+  renderOrders();
+}
+
+function renderStats(){
+  var orders=getOrders();
+  document.getElementById('sTotal').textContent=orders.length;
+  var active=orders.filter(function(o){return !['delivered','cancelled'].includes(o.status)}).length;
+  document.getElementById('sActive').textContent=active;
+  var delivered=orders.filter(function(o){return o.status==='delivered'}).length;
+  document.getElementById('sDelivered').textContent=delivered;
+  var rev=0;
+  orders.filter(function(o){return o.paid}).forEach(function(o){
+    var p=parseFloat((o.price||'').replace(/[^0-9.]/g,''));
+    if(!isNaN(p))rev+=p;
+  });
+  document.getElementById('sRevenue').textContent='€'+rev.toFixed(0);
+}
+
+function renderFilters(){
+  var orders=getOrders();
+  var counts={all:orders.length};
+  ALL_STATUSES.forEach(function(s){ counts[s]=orders.filter(function(o){return o.status===s}).length; });
+  var html='<button class="fb '+(currentFilter==='all'?'active':'')+'" data-f="all">All orders <span class="fb-count">'+counts.all+'</span></button>';
+  ALL_STATUSES.forEach(function(s){
+    if(counts[s]>0||s==='pending'||s==='confirmed'){
+      html+='<button class="fb '+(currentFilter===s?'active':'')+'" data-f="'+s+'">'+(STATUS_MAP[s]||{label:s}).label+' <span class="fb-count">'+counts[s]+'</span></button>';
+    }
+  });
+  var fb=document.getElementById('filterBtns');
+  fb.innerHTML=html;
+  fb.querySelectorAll('.fb').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      currentFilter=btn.dataset.f;
+      renderFilters();
+      renderOrders();
+    });
+  });
+}
+
+function renderOrders(){
+  var orders=getOrders();
+  var q=document.getElementById('searchInput').value.toLowerCase();
+  var filtered=orders.filter(function(o){
+    if(currentFilter!=='all'&&o.status!==currentFilter) return false;
+    if(q){
+      var hay=(o.id+' '+o.client.name+' '+o.client.email+' '+(CNAME[o.shipment.from]||'')+' '+(CNAME[o.shipment.to]||'')+(o.client.company||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  var html='';
+  if(!filtered.length){
+    html='<div class="empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6M9 13h4"/></svg><p>No orders found</p></div>';
+  } else {
+    filtered.forEach(function(o){
+      var sm=STATUS_MAP[o.status]||{label:o.status,cls:'s-pending'};
+      var isActive=currentOrderId===o.id;
+      html+='<div class="order-row'+(isActive?' active':'')+'" data-id="'+o.id+'">';
+      html+='<div><div class="or-id">'+o.id+'</div><div style="font-size:.68rem;color:#3D5080">'+fmtDate(o.createdAt)+'</div></div>';
+      html+='<div class="or-info"><div class="or-name">'+o.client.name+(o.client.company?' <span style="color:#3D5080;font-weight:400">· '+o.client.company+'</span>':'')+'</div>';
+      html+='<div class="or-route">'+(CNAME[o.shipment.from]||o.shipment.from)+' → '+(CNAME[o.shipment.to]||o.shipment.to)+' · '+o.shipment.qty+'× '+o.shipment.palletType+' · '+o.shipment.service+'</div></div>';
+      html+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><div class="or-price">'+o.price+'</div>'+(o.paid?'<span class="or-paid">✓ Paid</span>':'')+'</div>';
+      html+='<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px"><span class="status-badge '+sm.cls+'"><span class="sdot"></span>'+sm.label+'</span>'+(o.status==='pending'?'<span class="new-badge">New</span>':'')+'</div>';
+      html+='</div>';
+    });
+  }
+  document.getElementById('ordersList').innerHTML=html;
+  document.querySelectorAll('.order-row').forEach(function(row){
+    row.addEventListener('click',function(){
+      currentOrderId=row.dataset.id;
+      renderOrders();
+      var o=getOrders().find(function(x){return x.id===row.dataset.id});
+      if(o) renderDetail(o);
+    });
+  });
+}
+
+// ── DETAIL PANEL ─────────────────────────────────────────────
+function renderDetail(order){
+  var panel=document.getElementById('detailPanel');
+  panel.style.display='block';
+  var sm=STATUS_MAP[order.status]||{label:order.status,cls:'s-pending'};
+  var s=order.shipment;
+
+  // Build status buttons
+  var sttHtml='';
+  ALL_STATUSES.forEach(function(st){
+    sttHtml+='<button class="stt-btn'+(order.status===st?' active':'')+'" data-st="'+st+'">'+(STATUS_MAP[st]||{label:st}).label+'</button>';
+  });
+
+  // Timeline
+  var tlHtml='';
+  (order.timeline||[]).slice().reverse().forEach(function(e){
+    var lbl=(STATUS_MAP[e.status]||{label:e.status}).label;
+    tlHtml+='<div class="tl-evt"><span class="tl-status">'+lbl+'</span><span class="tl-ts">'+fmtDate(e.ts)+'</span>'+(e.note?'<span class="tl-note-t"> — '+e.note+'</span>':'')+'</div>';
+  });
+
+  // POD section
+  var podHtml='';
+  if(order.status==='delivered'){
+    if(order.pod){
+      podHtml='<div class="dp-section"><div class="dp-sec-title">Proof of Delivery</div>';
+      podHtml+='<div class="pod-upload has-pod"><label><div class="pod-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>';
+      podHtml+='<div class="pod-txt"><div class="pod-uploaded">✓ POD uploaded — client can download</div><small>Click to replace</small></div></label>';
+      podHtml+='<input type="file" id="podFile" accept=".pdf,.jpg,.jpeg,.png"/></div>';
+      podHtml+='</div>';
+    } else {
+      podHtml='<div class="dp-section" style="border:1px solid rgba(0,212,170,.15)"><div class="dp-sec-title" style="color:#00D4AA">Upload Proof of Delivery</div>';
+      podHtml+='<div class="pod-upload"><label><div class="pod-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>';
+      podHtml+='<div class="pod-txt"><strong>Upload POD</strong><small>PDF, JPG or PNG — client will be able to download it</small></div></label>';
+      podHtml+='<input type="file" id="podFile" accept=".pdf,.jpg,.jpeg,.png"/></div>';
+      podHtml+='</div>';
+    }
+  }
+
+  panel.innerHTML =
+    '<div class="dp-head">'+
+      '<div style="display:flex;align-items:center;gap:12px">'+
+        '<span class="dp-id">'+order.id+'</span>'+
+        '<span class="status-badge '+sm.cls+'"><span class="sdot"></span>'+sm.label+'</span>'+
+        (order.status==='pending'?'<span class="new-badge">● New Order</span>':'')+
+        (order.paid?'<span style="font-size:.73rem;color:#00D4AA;font-weight:700">✓ Paid</span>':'<span style="font-size:.73rem;color:#8094B8">Unpaid</span>')+
+      '</div>'+
+      '<div style="font-size:.75rem;color:#3D5080">'+fmtDate(order.createdAt)+'</div>'+
+    '</div>'+
+    // Accept bar — only shown for pending orders
+    (order.status==='pending' ?
+      '<div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.05)">'+
+        '<div class="accept-bar">'+
+          '<div class="accept-bar-info">'+
+            '<strong>New booking from '+order.client.name+'</strong>'+
+            '<span>'+(CNAME[order.shipment.from]||order.shipment.from)+' → '+(CNAME[order.shipment.to]||order.shipment.to)+
+            ' · '+order.shipment.qty+'× '+order.shipment.palletType+' · '+order.price+'</span>'+
+          '</div>'+
+          '<div class="accept-bar-actions">'+
+            '<button class="btn-accept" id="btnAccept">✓ Accept Order</button>'+
+            '<button class="btn-ask" id="btnAskInfo">? Ask Info</button>'+
+            '<button class="btn-reject" id="btnReject">✕ Reject</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    : '') +
+    '<div class="dp-body">'+
+
+      '<div class="dp-section">'+
+        '<div class="dp-sec-title">Client</div>'+
+        '<div class="kv-grid">'+
+          '<div class="kv"><div class="kv-l">Name</div><div class="kv-v">'+order.client.name+'</div></div>'+
+          '<div class="kv"><div class="kv-l">Email</div><div class="kv-v" style="word-break:break-all">'+order.client.email+'</div></div>'+
+          (order.client.phone?'<div class="kv"><div class="kv-l">Phone</div><div class="kv-v">'+order.client.phone+'</div></div>':'')+
+          (order.client.company?'<div class="kv"><div class="kv-l">Company</div><div class="kv-v">'+order.client.company+'</div></div>':'')+
+        '</div>'+
+        '<div style="display:flex;gap:8px;margin-top:10px">'+
+          '<a href="mailto:'+order.client.email+'?subject=Your HexaLog Order '+order.id+'" class="btn-sm" style="font-size:.75rem">✉ Email Client</a>'+
+          (order.client.phone?'<a href="tel:'+order.client.phone+'" class="btn-sm" style="font-size:.75rem">📞 Call</a>':'')+
+        '</div>'+
+      '</div>'+
+
+      '<div class="dp-section">'+
+        '<div class="dp-sec-title">Shipment Details</div>'+
+        '<div class="kv-grid">'+
+          '<div class="kv"><div class="kv-l">From</div><div class="kv-v">'+(CNAME[s.from]||s.from)+(s.fromCity?', '+s.fromCity:'')+'</div></div>'+
+          '<div class="kv"><div class="kv-l">To</div><div class="kv-v">'+(CNAME[s.to]||s.to)+(s.toCity?', '+s.toCity:'')+'</div></div>'+
+          (s.pickupAddress?'<div class="kv"><div class="kv-l">Pickup Address</div><div class="kv-v">'+s.pickupAddress+'</div></div>':'')+
+          (s.deliveryAddress?'<div class="kv"><div class="kv-l">Delivery Address</div><div class="kv-v">'+s.deliveryAddress+'</div></div>':'')+
+          (s.pickupPhone?'<div class="kv"><div class="kv-l">Pickup Contact</div><div class="kv-v">'+s.pickupPhone+'</div></div>':'')+
+          (s.deliveryPhone?'<div class="kv"><div class="kv-l">Delivery Contact</div><div class="kv-v">'+s.deliveryPhone+'</div></div>':'')+
+          '<div class="kv"><div class="kv-l">Service</div><div class="kv-v">'+s.service+'</div></div>'+
+          '<div class="kv"><div class="kv-l">Pallets</div><div class="kv-v">'+s.qty+'× '+s.palletType+'</div></div>'+
+          (s.height?'<div class="kv"><div class="kv-l">Height</div><div class="kv-v">'+s.height+' cm</div></div>':'')+
+          (s.weight?'<div class="kv"><div class="kv-l">Weight</div><div class="kv-v">'+s.weight+' kg</div></div>':'')+
+          '<div class="kv"><div class="kv-l">Price</div><div class="kv-v hl">'+order.price+'</div></div>'+
+          '<div class="kv"><div class="kv-l">Payment</div><div class="kv-v" style="color:'+(order.paid?'#00D4AA':'#FF6B6B')+'">'+(order.paid?'✓ Paid ('+(order.paymentMethod||'—')+')':'Unpaid')+'</div></div>'+
+        '</div>'+
+        (s.notes?'<div style="margin-top:10px;font-size:.82rem;color:#8094B8;background:#070C18;border-radius:6px;padding:8px 10px">📝 '+s.notes+'</div>':'')+
+      '</div>'+
+
+      '<div class="status-updater">'+
+        '<div class="su-title">⚡ Update Status</div>'+
+        '<div class="status-btns" id="sttBtns">'+sttHtml+'</div>'+
+        '<div class="note-row">'+
+          '<textarea id="sttNote" placeholder="Add a note (optional) — e.g. Picked up at 09:30, driver John"></textarea>'+
+          '<button class="btn-update" id="btnUpdateStatus">Update</button>'+
+        '</div>'+
+        '<p id="updateOk" style="font-size:.78rem;color:#00D4AA;margin-top:8px;display:none">✓ Status updated successfully</p>'+
+      '</div>'+
+
+      podHtml+
+
+      '<div class="dp-section">'+
+        '<div class="dp-sec-title">Timeline History</div>'+
+        '<div class="tl-mini">'+tlHtml+'</div>'+
+      '</div>'+
+
+    '</div>';
+
+  // Status button clicks
+  var pendingSt = order.status;
+  document.querySelectorAll('#sttBtns .stt-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('#sttBtns .stt-btn').forEach(function(b){b.classList.remove('active')});
+      btn.classList.add('active');
+      pendingSt = btn.dataset.st;
+    });
+  });
+
+  // Update button
+  document.getElementById('btnUpdateStatus').addEventListener('click', async function(){
+    var note=document.getElementById('sttNote').value.trim();
+    var orders=getOrders();
+    var idx=orders.findIndex(function(o){return o.id===order.id});
+    if(idx<0) return;
+    orders[idx].status=pendingSt;
+    orders[idx].timeline=orders[idx].timeline||[];
+    orders[idx].timeline.push({status:pendingSt,ts:new Date().toISOString(),note:note});
+    await upsertOrder(orders[idx]);
+    // Auto-email client about status change
+    sendStatusEmail(orders[idx], pendingSt);
+    document.getElementById('updateOk').style.display='block';
+    setTimeout(function(){document.getElementById('updateOk').style.display='none';},2500);
+    renderStats();
+    renderFilters();
+    renderOrders();
+    renderDetail(orders[idx]);
+  });
+
+  // ── ACCEPT / REJECT / ASK buttons ────────────────────────────
+  async function updateOrderStatus(newStatus, note, openEmail){
+    var orders=getOrders();
+    var idx=orders.findIndex(function(o){return o.id===order.id});
+    if(idx<0) return;
+    orders[idx].status=newStatus;
+    orders[idx].timeline=orders[idx].timeline||[];
+    orders[idx].timeline.push({status:newStatus,ts:new Date().toISOString(),note:note});
+    await upsertOrder(orders[idx]);
+    // Auto-email client about status change
+    sendStatusEmail(orders[idx], newStatus);
+    renderStats(); renderFilters(); renderOrders();
+    renderDetail(orders[idx]);
+    if(openEmail) window.location.href=openEmail;
+  }
+
+  var btnAccept=document.getElementById('btnAccept');
+  if(btnAccept){
+    btnAccept.addEventListener('click',function(){
+      var s=order.shipment; var c=order.client;
+      var body=
+        'Dear '+c.name+',\n\n'+
+        'Great news! We have confirmed your HexaLog booking.\n\n'+
+        'ORDER DETAILS\n'+
+        '─────────────────────────────\n'+
+        'Order ID     : '+order.id+'\n'+
+        'Route        : '+(CNAME[s.from]||s.from)+' → '+(CNAME[s.to]||s.to)+'\n'+
+        'Pallets      : '+s.qty+'× '+s.palletType+'\n'+
+        'Service      : '+s.service+(s.express?' + Express 24h':'')+(s.weekend?' + Weekend':'')+'\n'+
+        'Total Price  : '+order.price+'\n'+
+        '─────────────────────────────\n\n'+
+        'Our driver will contact you before pickup to confirm the exact time slot.\n\n'+
+        'You can track your shipment at any time via the HexaLog Client Portal:\n'+
+        '→ Open portal.html and enter your Order ID: '+order.id+'\n'+
+        '→ Email: '+c.email+'\n\n'+
+        'If you have any questions, reply to this email or call us.\n\n'+
+        'Kind regards,\nHexaLog Team\ninfo@hexalog.eu';
+      var mailto='mailto:'+c.email+
+        '?subject=✓ Order '+order.id+' Confirmed — HexaLog'+
+        '&body='+encodeURIComponent(body);
+      updateOrderStatus('confirmed','Order accepted by operator', mailto);
+    });
+  }
+
+  var btnReject=document.getElementById('btnReject');
+  if(btnReject){
+    btnReject.addEventListener('click',function(){
+      if(!confirm('Are you sure you want to reject order '+order.id+'?')) return;
+      var c=order.client;
+      var body=
+        'Dear '+c.name+',\n\n'+
+        'Unfortunately we are unable to accept your booking at this time (Order ID: '+order.id+').\n\n'+
+        'Possible reasons:\n'+
+        '- The requested route or time slot is not available\n'+
+        '- Capacity constraints on that date\n\n'+
+        'Please contact us to discuss alternatives:\n'+
+        'Email: info@hexalog.eu  |  Tel: +32 (0) 00 00 00 00\n\n'+
+        'We apologise for any inconvenience.\n\n'+
+        'Kind regards,\nHexaLog Team';
+      var mailto='mailto:'+c.email+
+        '?subject=Order '+order.id+' — HexaLog Update'+
+        '&body='+encodeURIComponent(body);
+      updateOrderStatus('cancelled','Order rejected by operator', mailto);
+    });
+  }
+
+  var btnAsk=document.getElementById('btnAskInfo');
+  if(btnAsk){
+    btnAsk.addEventListener('click',function(){
+      var c=order.client;
+      var body=
+        'Dear '+c.name+',\n\n'+
+        'Thank you for your booking (Order ID: '+order.id+').\n\n'+
+        'Before we can confirm your shipment, we need some additional information:\n\n'+
+        '- \n\n'+
+        'Please reply to this email at your earliest convenience.\n\n'+
+        'Kind regards,\nHexaLog Team\ninfo@hexalog.eu';
+      var mailto='mailto:'+c.email+
+        '?subject=Order '+order.id+' — Additional Information Required'+
+        '&body='+encodeURIComponent(body);
+      updateOrderStatus('waiting_customer','Waiting for additional information from client', mailto);
+    });
+  }
+
+  // POD upload
+  var podFile=document.getElementById('podFile');
+  if(podFile){
+    podFile.addEventListener('change',function(){
+      var file=podFile.files[0];
+      if(!file) return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var orders=getOrders();
+        var idx=orders.findIndex(function(o){return o.id===order.id});
+        if(idx<0) return;
+        orders[idx].pod=e.target.result;
+        saveOrders(orders);
+        renderDetail(orders[idx]);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Scroll into view
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── SEARCH ───────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input',function(){
+  currentOrderId=null;
+  document.getElementById('detailPanel').style.display='none';
+  renderOrders();
+});
+
+// ── NEW ORDER MODAL ──────────────────────────────────────────
+document.getElementById('btnNewOrder').addEventListener('click',function(){document.getElementById('newOrderModal').classList.add('open');});
+var NO_CITIES = {
+  BE:['Aalst','Antwerp','Bruges','Brussels','Charleroi','Gent','Ghent','Hasselt','Kortrijk','Leuven','Liège','Mechelen','Mons','Namur','Oostende','Roeselare','Sint-Niklaas','Tournai','Turnhout','Vilvoorde','Waregem','Zaventem'],
+  NL:['Almere','Amersfoort','Amsterdam','Arnhem','Breda','Delft','Den Haag','Deventer','Eindhoven','Enschede','Groningen','Haarlem','Heerlen','Helmond','Hengelo','Hilversum','Leiden','Maastricht','Nijmegen','Rotterdam','Tilburg','Utrecht','Venlo','Zaandam','Zoetermeer','Zwolle'],
+  LU:['Bascharage','Diekirch','Differdange','Dudelange','Echternach','Esch-sur-Alzette','Ettelbruck','Luxembourg City','Mersch','Petange','Remich','Wiltz'],
+  FR:['Amiens','Angers','Arras','Bordeaux','Brest','Calais','Clermont-Ferrand','Dijon','Dunkirk','Grenoble','Lens','Lille','Limoges','Lyon','Marseille','Metz','Montpellier','Nancy','Nantes','Nice','Nimes','Orleans','Paris','Perpignan','Reims','Rennes','Rouen','Saint-Etienne','Strasbourg','Toulon','Toulouse','Tours','Valenciennes']
+};
+function noPopCity(countryId, cityId){
+  var val = document.getElementById(countryId).value;
+  var sel = document.getElementById(cityId);
+  sel.innerHTML = '';
+  if(!val){ sel.innerHTML='<option value="">-- Select country first --</option>'; sel.disabled=true; return; }
+  var cities = NO_CITIES[val]||[];
+  sel.innerHTML = '<option value="">-- Select city --</option>';
+  cities.forEach(function(c){ sel.innerHTML += '<option value="'+c+'">'+c+'</option>'; });
+  sel.disabled = false;
+}
+
+document.getElementById('newOrderX').addEventListener('click',function(){document.getElementById('newOrderModal').classList.remove('open');});
+document.getElementById('newOrderCancel').addEventListener('click',function(){document.getElementById('newOrderModal').classList.remove('open');});
+document.getElementById('newOrderModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+
+document.getElementById('newOrderSave').addEventListener('click', async function(){
+  var name=document.getElementById('no_name').value.trim();
+  var email=document.getElementById('no_email').value.trim();
+  var from=document.getElementById('no_from').value;
+  var to=document.getElementById('no_to').value;
+  var err=document.getElementById('noErr');
+  if(!name||!email||!from||!to){err.textContent='Please fill in name, email, pickup country and delivery country.';err.style.display='block';return;}
+  err.style.display='none';
+  var id='HL-'+Date.now().toString(36).toUpperCase().slice(-6);
+  var order={
+    id:id, status:'pending', createdAt:new Date().toISOString(),
+    orderType:document.getElementById('no_otype').value,
+    client:{
+      name:name, email:email,
+      phone:document.getElementById('no_phone').value,
+      company:document.getElementById('no_company').value
+    },
+    shipment:{
+      from:from,
+      fromCity:document.getElementById('no_fromCity').value,
+      pickupAddress:document.getElementById('no_pickupAddr').value,
+      pickupContact:document.getElementById('no_pickupContact').value,
+      pickupPhone:document.getElementById('no_pickupPhone').value,
+      to:to,
+      toCity:document.getElementById('no_toCity').value,
+      deliveryAddress:document.getElementById('no_deliveryAddr').value,
+      deliveryContact:document.getElementById('no_deliveryContact').value,
+      deliveryPhone:document.getElementById('no_deliveryPhone').value,
+      service:document.getElementById('no_svc').value,
+      palletType:document.getElementById('no_palType').value,
+      qty:+document.getElementById('no_qty').value||1,
+      height:document.getElementById('no_height').value,
+      weight:document.getElementById('no_weight').value,
+      taillift:document.getElementById('no_tailLift').checked,
+      insurance:document.getElementById('no_insurance').checked,
+      notify:document.getElementById('no_notify').checked,
+      notes:document.getElementById('no_notes').value
+    },
+    price:document.getElementById('no_price').value||'TBD',
+    paid:document.getElementById('no_paid').checked,
+    pod:null,
+    timeline:[{status:'pending',label:'Order Created (manual)',ts:new Date().toISOString()}]
+  };
+  await upsertOrder(order);
+  document.getElementById('newOrderModal').classList.remove('open');
+  loadDashboard();
+  currentOrderId=order.id;
+  renderOrders();
+  renderDetail(order);
+});
+
+// ── REALTIME + POLLING ────────────────────────────────────────
+function subscribeRealtime(){
+  _sb.channel('orders-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'orders'}, async function(payload){
+      await fetchOrders();
+      var pending=_orders.filter(function(o){return o.status==='pending';});
+      if(payload.eventType==='INSERT'){
+        document.title='(1 New) HexaLog Admin TMS';
+        if('Notification' in window && Notification.permission==='granted'){
+          new Notification('HexaLog — New Order!',{body:'New booking received.',icon:''});
+        }
+      } else {
+        document.title='HexaLog — Admin TMS';
+      }
+      renderStats(); renderFilters(); renderOrders();
+    })
+    .subscribe();
+}
+// Fallback poll every 30s
+setInterval(async function(){
+  if(sessionStorage.getItem('hl_admin')!=='1') return;
+  await fetchOrders();
+  renderStats(); renderFilters(); renderOrders();
+}, 30000);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://assets.codepen.io/16327/MorphSVGPlugin3.min.js"></script>
+<script>
+window.addEventListener('load', function(){
+  if(typeof gsap === 'undefined' || typeof MorphSVGPlugin === 'undefined') return;
+  gsap.registerPlugin(MorphSVGPlugin);
+
+  var _emailEl=document.getElementById('loginEmail'),
+      _passEl=document.getElementById('loginPassword'),
+      _showChk=document.getElementById('showPasswordCheck'),
+      _showTog=document.getElementById('showPasswordToggle'),
+      _svgC=document.querySelector('.svgContainer'),
+      _twoF=document.querySelector('.twoFingers'),
+      _armL=document.querySelector('.armL'),_armR=document.querySelector('.armR'),
+      _eyeL=document.querySelector('.eyeL'),_eyeR=document.querySelector('.eyeR'),
+      _nose=document.querySelector('.nose'),_mouth=document.querySelector('.mouth'),
+      _mBG=document.querySelector('.mouthBG'),_mSmBG=document.querySelector('.mouthSmallBG'),
+      _mMeBG=document.querySelector('.mouthMediumBG'),_mLaBG=document.querySelector('.mouthLargeBG'),
+      _mMkP=document.querySelector('#mouthMaskPath'),_mOut=document.querySelector('.mouthOutline'),
+      _tooth=document.querySelector('.tooth'),_tongue=document.querySelector('.tongue'),
+      _chin=document.querySelector('.chin'),_face=document.querySelector('.face'),
+      _ebrow=document.querySelector('.eyebrow'),
+      _oEarL=document.querySelector('.earL .outerEar'),_oEarR=document.querySelector('.earR .outerEar'),
+      _eHairL=document.querySelector('.earL .earHair'),_eHairR=document.querySelector('.earR .earHair'),
+      _hair=document.querySelector('.hair'),
+      _bodyBG=document.querySelector('.bodyBGnormal'),_bodyBGc=document.querySelector('.bodyBGchanged');
+
+  var _active,_emailScrMax,_scCenter,_svgPos,_emailPos,
+      _chinMin=.5,_dFromC=0,_mouthSt='small',_blinking,_eyeScale=1,_eyesCov=false,_showClicked=false;
+  var _eLCoords,_eRCoords,_nCoords,_mCoords;
+
+  function _getPos(el){var x=0,y=0;while(el){if(el.tagName=='BODY'){x+=(el.offsetLeft-(el.scrollLeft||document.documentElement.scrollLeft)+el.clientLeft);y+=(el.offsetTop-(el.scrollTop||document.documentElement.scrollTop)+el.clientTop);}else{x+=(el.offsetLeft-el.scrollLeft+el.clientLeft);y+=(el.offsetTop-el.scrollTop+el.clientTop);}el=el.offsetParent;}return{x:x,y:y};}
+  function _getAngle(x1,y1,x2,y2){return Math.atan2(y1-y2,x1-x2);}
+  function _randInt(max){return Math.floor(Math.random()*Math.floor(max));}
+
+  function _calcFace(){
+    var cPos=_emailEl.selectionEnd||_emailEl.value.length,div=document.createElement('div'),span=document.createElement('span'),cs=getComputedStyle(_emailEl);
+    [].forEach.call(cs,function(p){div.style[p]=cs[p];});
+    div.style.position='absolute';div.style.visibility='hidden';document.body.appendChild(div);
+    div.textContent=_emailEl.value.substr(0,cPos);span.textContent=_emailEl.value.substr(cPos)||'.';div.appendChild(span);
+    var eLa,eRa,nA,mA,eLx,eLy,eRx,eRy,nX,nY,mX,mY,mR,cX,cY,cS,fX,fY,fSk,eSk,oeX,oeY,hX;
+    if(_emailEl.scrollWidth<=_emailScrMax){var caret=_getPos(span);_dFromC=_scCenter-(caret.x+_emailPos.x);eLa=_getAngle(_eLCoords.x,_eLCoords.y,_emailPos.x+caret.x,_emailPos.y+25);eRa=_getAngle(_eRCoords.x,_eRCoords.y,_emailPos.x+caret.x,_emailPos.y+25);nA=_getAngle(_nCoords.x,_nCoords.y,_emailPos.x+caret.x,_emailPos.y+25);mA=_getAngle(_mCoords.x,_mCoords.y,_emailPos.x+caret.x,_emailPos.y+25);}
+    else{eLa=_getAngle(_eLCoords.x,_eLCoords.y,_emailPos.x+_emailScrMax,_emailPos.y+25);eRa=_getAngle(_eRCoords.x,_eRCoords.y,_emailPos.x+_emailScrMax,_emailPos.y+25);nA=_getAngle(_nCoords.x,_nCoords.y,_emailPos.x+_emailScrMax,_emailPos.y+25);mA=_getAngle(_mCoords.x,_mCoords.y,_emailPos.x+_emailScrMax,_emailPos.y+25);}
+    eLx=Math.cos(eLa)*20;eLy=Math.sin(eLa)*10;eRx=Math.cos(eRa)*20;eRy=Math.sin(eRa)*10;
+    nX=Math.cos(nA)*23;nY=Math.sin(nA)*10;mX=Math.cos(mA)*23;mY=Math.sin(mA)*10;mR=Math.cos(mA)*6;
+    cX=mX*.8;cY=mY*.5;cS=1-((_dFromC*.15)/100);if(cS>1){cS=1-(cS-1);if(cS<_chinMin)cS=_chinMin;}
+    fX=mX*.3;fY=mY*.4;fSk=Math.cos(mA)*5;eSk=Math.cos(mA)*25;oeX=Math.cos(mA)*4;oeY=Math.cos(mA)*5;hX=Math.cos(mA)*6;
+    gsap.to(_eyeL,1,{x:-eLx,y:-eLy,ease:'expo.out'});gsap.to(_eyeR,1,{x:-eRx,y:-eRy,ease:'expo.out'});
+    gsap.to(_nose,1,{x:-nX,y:-nY,rotation:mR,transformOrigin:'center center',ease:'expo.out'});
+    gsap.to(_mouth,1,{x:-mX,y:-mY,rotation:mR,transformOrigin:'center center',ease:'expo.out'});
+    gsap.to(_chin,1,{x:-cX,y:-cY,scaleY:cS,ease:'expo.out'});
+    gsap.to(_face,1,{x:-fX,y:-fY,skewX:-fSk,transformOrigin:'center top',ease:'expo.out'});
+    gsap.to(_ebrow,1,{x:-fX,y:-fY,skewX:-eSk,transformOrigin:'center top',ease:'expo.out'});
+    gsap.to(_oEarL,1,{x:oeX,y:-oeY,ease:'expo.out'});gsap.to(_oEarR,1,{x:oeX,y:oeY,ease:'expo.out'});
+    gsap.to(_eHairL,1,{x:-oeX,y:-oeY,ease:'expo.out'});gsap.to(_eHairR,1,{x:-oeX,y:oeY,ease:'expo.out'});
+    gsap.to(_hair,1,{x:hX,scaleY:1.2,transformOrigin:'center bottom',ease:'expo.out'});
+    document.body.removeChild(div);
+  }
+
+  function _onEmailInput(){
+    _calcFace();
+    var v=_emailEl.value;
+    if(v.length>0){
+      if(v.includes('@')){_mouthSt='large';gsap.to([_mBG,_mOut,_mMkP],1,{morphSVG:_mLaBG,ease:'expo.out'});gsap.to(_tooth,1,{x:3,y:-2,ease:'expo.out'});gsap.to(_tongue,1,{y:2,ease:'expo.out'});gsap.to([_eyeL,_eyeR],1,{scaleX:.65,scaleY:.65,ease:'expo.out',transformOrigin:'center center'});_eyeScale=.65;}
+      else{_mouthSt='medium';gsap.to([_mBG,_mOut,_mMkP],1,{morphSVG:_mMeBG,shapeIndex:8,ease:'expo.out'});gsap.to(_tooth,1,{x:0,y:0,ease:'expo.out'});gsap.to(_tongue,1,{x:0,y:1,ease:'expo.out'});gsap.to([_eyeL,_eyeR],1,{scaleX:.85,scaleY:.85,ease:'expo.out'});_eyeScale=.85;}
+    } else {
+      _mouthSt='small';gsap.to([_mBG,_mOut,_mMkP],1,{morphSVG:_mSmBG,shapeIndex:9,ease:'expo.out'});gsap.to(_tooth,1,{x:0,y:0,ease:'expo.out'});gsap.to(_tongue,1,{y:0,ease:'expo.out'});gsap.to([_eyeL,_eyeR],1,{scaleX:1,scaleY:1,ease:'expo.out'});_eyeScale=1;
+    }
+  }
+
+  function _resetFace(){gsap.to([_eyeL,_eyeR],1,{x:0,y:0,ease:'expo.out'});gsap.to(_nose,1,{x:0,y:0,scaleX:1,scaleY:1,ease:'expo.out'});gsap.to(_mouth,1,{x:0,y:0,rotation:0,ease:'expo.out'});gsap.to(_chin,1,{x:0,y:0,scaleY:1,ease:'expo.out'});gsap.to([_face,_ebrow],1,{x:0,y:0,skewX:0,ease:'expo.out'});gsap.to([_oEarL,_oEarR,_eHairL,_eHairR,_hair],1,{x:0,y:0,scaleY:1,ease:'expo.out'});}
+  function _coverEyes(){gsap.killTweensOf([_armL,_armR]);gsap.set([_armL,_armR],{visibility:'visible'});gsap.to(_armL,.45,{x:-93,y:10,rotation:0,ease:'quad.out'});gsap.to(_armR,.45,{x:-93,y:10,rotation:0,ease:'quad.out',delay:.1});gsap.to(_bodyBG,.45,{morphSVG:_bodyBGc,ease:'quad.out'});_eyesCov=true;}
+  function _uncoverEyes(){gsap.killTweensOf([_armL,_armR]);gsap.to(_armL,1.35,{y:220,ease:'quad.out'});gsap.to(_armL,1.35,{rotation:105,ease:'quad.out',delay:.1});gsap.to(_armR,1.35,{y:220,ease:'quad.out'});gsap.to(_armR,1.35,{rotation:-105,ease:'quad.out',delay:.1,onComplete:function(){gsap.set([_armL,_armR],{visibility:'hidden'});}});gsap.to(_bodyBG,.45,{morphSVG:_bodyBG,ease:'quad.out'});_eyesCov=false;}
+  function _startBlink(d){_blinking=gsap.to([_eyeL,_eyeR],.1,{delay:d||1,scaleY:0,yoyo:true,repeat:1,transformOrigin:'center center',onComplete:function(){_startBlink(_randInt(12));}});}
+
+  // ── INIT ──
+  _svgPos=_getPos(_svgC);_emailPos=_getPos(_emailEl);
+  _scCenter=_svgPos.x+(_svgC.offsetWidth/2);
+  _eLCoords={x:_svgPos.x+84,y:_svgPos.y+76};_eRCoords={x:_svgPos.x+113,y:_svgPos.y+76};
+  _nCoords={x:_svgPos.x+97,y:_svgPos.y+81};_mCoords={x:_svgPos.x+100,y:_svgPos.y+100};
+  gsap.set(_armL,{x:-93,y:220,rotation:105,transformOrigin:'top left'});
+  gsap.set(_armR,{x:-93,y:220,rotation:-105,transformOrigin:'top right'});
+  gsap.set(_mouth,{transformOrigin:'center center'});
+  _startBlink(5);
+  _emailScrMax=_emailEl.scrollWidth;
+
+  _emailEl.addEventListener('focus',function(e){_active='email';document.getElementById('yetiIG1').classList.add('focusWithText');_onEmailInput();});
+  _emailEl.addEventListener('blur',function(e){_active=null;setTimeout(function(){if(_active=='email')return;if(e.target.value=='')document.getElementById('yetiIG1').classList.remove('focusWithText');_resetFace();},100);});
+  _emailEl.addEventListener('input',_onEmailInput);
+  _passEl.addEventListener('focus',function(){_active='password';if(!_eyesCov)_coverEyes();});
+  _passEl.addEventListener('blur',function(){_active=null;setTimeout(function(){if(_active=='toggle'||_active=='password')return;_uncoverEyes();},100);});
+  _showTog.addEventListener('mousedown',function(){_showClicked=true;});
+  _showTog.addEventListener('mouseup',function(){_showClicked=false;});
+  _showChk.addEventListener('focus',function(){_active='toggle';if(!_eyesCov)_coverEyes();});
+  _showChk.addEventListener('blur',function(){_active=null;if(!_showClicked){setTimeout(function(){if(_active=='password'||_active=='toggle')return;_uncoverEyes();},100);}});
+  _showChk.addEventListener('change',function(e){setTimeout(function(){if(e.target.checked){_passEl.type='text';gsap.to(_twoF,.35,{transformOrigin:'bottom left',rotation:30,x:-9,y:-2,ease:'power2.inOut'});}else{_passEl.type='password';gsap.to(_twoF,.35,{transformOrigin:'bottom left',rotation:0,x:0,y:0,ease:'power2.inOut'});}},100);});
+});
+</script>
+<!-- ── WhatsApp Float Button ── -->
+<style>.wa-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;align-items:flex-end}.wa-tip{background:rgba(5,10,22,.95);border:1px solid rgba(37,211,102,.4);border-radius:10px;padding:9px 14px;font-size:.78rem;font-weight:600;color:#E4EAFF;white-space:nowrap;pointer-events:none;opacity:0;transform:translateY(6px);transition:.3s;backdrop-filter:blur(12px);margin-bottom:10px;position:relative}.wa-tip::after{content:'';position:absolute;bottom:-6px;right:18px;width:10px;height:10px;background:rgba(5,10,22,.95);border-right:1px solid rgba(37,211,102,.4);border-bottom:1px solid rgba(37,211,102,.4);transform:rotate(45deg)}.wa-wrap.show .wa-tip{opacity:1;transform:translateY(0)}.wa-btn{display:flex;align-items:center;cursor:pointer;text-decoration:none;animation:wa-pop .5s cubic-bezier(.34,1.56,.64,1) 1.5s both}@keyframes wa-pop{from{opacity:0;transform:scale(0) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}.wa-inner{display:flex;align-items:center;gap:0;background:#25D366;border-radius:50px;box-shadow:0 4px 20px rgba(37,211,102,.45);overflow:hidden;transition:.3s}.wa-btn:hover .wa-inner{box-shadow:0 6px 28px rgba(37,211,102,.65)}.wa-icon{width:56px;height:56px;display:flex;align-items:center;justify-content:center}.wa-text{max-width:0;opacity:0;white-space:nowrap;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;color:#fff;padding-right:0;transition:max-width .35s,opacity .35s,padding .35s;overflow:hidden}.wa-btn:hover .wa-text{max-width:160px;opacity:1;padding-right:18px}@media(max-width:480px){.wa-icon{width:48px;height:48px}.wa-wrap{bottom:18px;right:18px}}</style>
+<div class="wa-wrap" id="wa-wrap"><div class="wa-tip">Need help? Chat on WhatsApp 💬</div><a class="wa-btn" href="https://wa.me/31612345678?text=Hello%20HexaLog%2C%20I%20need%20help%20with%20a%20shipment." target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><div class="wa-inner"><div class="wa-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></div><span class="wa-text">Chat with us</span></div></a></div>
+<script>(function(){var w=document.getElementById('wa-wrap');if(!w)return;setTimeout(function(){w.classList.add('show');},2000);setTimeout(function(){w.classList.remove('show');},5500);})();</script>
+</body>
+</html>
