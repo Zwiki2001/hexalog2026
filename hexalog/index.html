@@ -1080,6 +1080,26 @@ table{word-break:normal}
 @media(max-width:960px){.map-layout{grid-template-columns:1fr;gap:36px}.faq-layout{grid-template-columns:1fr;gap:32px}.faq-side{position:static}}
 @media(max-width:700px){.track-grid{grid-template-columns:1fr}.rv-grid{grid-template-columns:1fr}.blog-grid{grid-template-columns:1fr}.rs-score{border-right:none;padding-right:0;padding-bottom:16px;border-bottom:1px solid rgba(26,63,143,.3);width:100%}.sec-inner{padding-left:16px;padding-right:16px}.section{padding:64px 0}}
 @media(max-width:480px){.section-title{font-size:1.5rem}.rv-summary{flex-direction:column;align-items:flex-start}.btn-track-go{width:100%;justify-content:center}}
+
+/* ── DARK/LIGHT MODE ── */
+.theme-toggle{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#8094B8;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s,color .2s;flex-shrink:0}
+.theme-toggle:hover{background:rgba(26,63,143,.4);color:#E4EAFF}
+.icon-sun{display:none}
+body.light-mode{background:#F0F4FF !important;color:#0B1220 !important}
+body.light-mode nav{background:rgba(240,244,255,.97) !important;border-bottom:1px solid rgba(0,0,0,.1) !important}
+body.light-mode .nav-link{color:#1A2540 !important}
+body.light-mode .hero{background:linear-gradient(135deg,#1A3F8F 0%,#0d2660 100%) !important}
+body.light-mode .section-dark{background:#E8EEF8 !important}
+body.light-mode .section-title{color:#0B1220 !important}
+body.light-mode .section-sub{color:#4A5568 !important}
+body.light-mode .card,.light-mode .service-card{background:#fff !important;border-color:rgba(0,0,0,.1) !important;color:#0B1220 !important}
+body.light-mode .rv-card,body.light-mode .blog-card,body.light-mode .faq-item,body.light-mode .cov-item{background:#fff !important;border-color:rgba(0,0,0,.1) !important}
+body.light-mode .rv-quote,body.light-mode .blog-excerpt,body.light-mode .cov-det,body.light-mode .faq-a-inner{color:#4A5568 !important}
+body.light-mode .rv-name,body.light-mode .blog-title,body.light-mode .cov-name,body.light-mode .faq-q{color:#0B1220 !important}
+body.light-mode .tf-inp{background:#fff !important;border-color:rgba(26,63,143,.4) !important;color:#0B1220 !important}
+body.light-mode footer{background:#1A3F8F !important;color:#E4EAFF !important}
+body.light-mode .icon-moon{display:none !important}
+body.light-mode .icon-sun{display:block !important}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2036,6 +2056,26 @@ table{word-break:normal}
           Message sent! We will be in touch within 2 hours.
         </div>
       </form>
+    </div>
+  </div>
+</section>
+
+<!-- INVOICE DEMO SECTION -->
+<section class="section" id="invoice-demo">
+  <div class="sec-inner" style="text-align:center">
+    <div class="section-tag" style="justify-content:center;margin-bottom:12px">Factuur</div>
+    <h2 class="section-title" style="margin-bottom:12px">Download een voorbeeldfactuur</h2>
+    <p class="section-sub" style="margin:0 auto 32px;text-align:center">Klik hieronder om een voorbeeld PDF-factuur te downloaden. Uw klanten ontvangen dit automatisch zodra de order is afgeleverd.</p>
+    <div style="display:inline-flex;align-items:center;gap:16px;background:rgba(26,63,143,.12);border:1px solid rgba(26,63,143,.4);border-radius:20px;padding:28px 40px;flex-wrap:wrap;justify-content:center">
+      <div style="text-align:left">
+        <div style="font-size:.75rem;color:#8094B8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Voorbeeldorder</div>
+        <div style="font-size:1.1rem;font-weight:700;color:#E4EAFF;margin-bottom:2px">HXL-20260001 — Rotterdam → Paris</div>
+        <div style="font-size:.88rem;color:#8094B8">2 pallets · 850 kg · LTL Standard · €148,50 excl. BTW</div>
+      </div>
+      <button onclick="demoInvoice()" class="btn-primary" style="padding:14px 28px;display:flex;align-items:center;gap:10px;white-space:nowrap;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Factuur PDF
+      </button>
     </div>
   </div>
 </section>
@@ -3086,16 +3126,194 @@ document.querySelectorAll('.lang-bar button').forEach(function(btn){
 function bkDrawBarcode(doc,text,x,y,w,h){var bits=[];bits=bits.concat([1,0,1]);for(var i=0;i<text.length;i++){var c=text.charCodeAt(i)%95+32;for(var b=6;b>=0;b--)bits.push((c>>b)&1);bits.push(0);}bits=bits.concat([1,0,1,1]);var barW=w/bits.length;for(var j=0;j<bits.length;j++){if(bits[j]){doc.setFillColor(0,0,0);doc.rect(x+j*barW,y,barW*0.85,h,'F');}}}
 
 /* ── DARK MODE TOGGLE ── */
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
   var btn = document.getElementById('themeToggle');
   if(!btn) return;
-  var saved = localStorage.getItem('hexaTheme');
-  if(saved === 'light') document.body.classList.add('light-mode');
+  if(localStorage.getItem('hexaTheme') === 'light') document.body.classList.add('light-mode');
   btn.addEventListener('click', function(){
     document.body.classList.toggle('light-mode');
     localStorage.setItem('hexaTheme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
   });
-})();
+});
+
+/* ── INVOICE GENERATOR ── */
+function generateInvoice(order){
+  /* order can be passed from admin, or use demo data */
+  var o = order || {
+    id: 'HXL-20260001',
+    email: 'client@example.com',
+    name: 'Demo Client BV',
+    status: 'delivered',
+    created_at: new Date().toISOString(),
+    shipment: {
+      fromCity: 'Rotterdam', fromCountry: 'Netherlands',
+      toCity: 'Paris', toCountry: 'France',
+      qty: 2, weight: 850, service: 'LTL Standard',
+      pickupAddress: 'Waalhaven 45, Rotterdam',
+      deliveryAddress: 'Rue de Rivoli 10, Paris'
+    },
+    price: 148.50
+  };
+  var s = o.shipment || {};
+  var qty = s.qty || 1;
+  var unitPrice = o.price ? (o.price / qty) : 74.25;
+  var subtotal = unitPrice * qty;
+  var btw = subtotal * 0.21;
+  var total = subtotal + btw;
+  var invoiceNr = 'INV-' + o.id;
+  var invoiceDate = new Date(o.created_at || Date.now()).toLocaleDateString('nl-NL');
+  var dueDate = new Date(Date.now() + 14*24*60*60*1000).toLocaleDateString('nl-NL');
+
+  var doc = new window.jspdf.jsPDF({ unit:'mm', format:'a4' });
+  var W = 210, margin = 18;
+
+  /* ─ Background ─ */
+  doc.setFillColor(8, 18, 40);
+  doc.rect(0, 0, W, 297, 'F');
+
+  /* ─ Header bar ─ */
+  doc.setFillColor(26, 63, 143);
+  doc.roundedRect(margin, 14, W - margin*2, 36, 4, 4, 'F');
+
+  /* Company name */
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(22);
+  doc.setTextColor(228, 234, 255);
+  doc.text('HexaLog', margin + 8, 30);
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(160, 180, 220);
+  doc.text('Logistics Benelux & France', margin + 8, 37);
+  doc.text('KVK: 12345678  |  BTW: NL123456789B01', margin + 8, 43);
+
+  /* Invoice label right */
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(20);
+  doc.setTextColor(245, 166, 35);
+  doc.text('FACTUUR', W - margin - 8, 30, { align:'right' });
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(200, 210, 235);
+  doc.text(invoiceNr, W - margin - 8, 38, { align:'right' });
+  doc.text('Datum: ' + invoiceDate, W - margin - 8, 44, { align:'right' });
+
+  /* ─ Client & order info boxes ─ */
+  var boxY = 58;
+  /* Client box */
+  doc.setFillColor(20, 35, 72);
+  doc.roundedRect(margin, boxY, 82, 36, 3, 3, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.setTextColor(245, 166, 35);
+  doc.text('FACTUURADRES', margin + 5, boxY + 8);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(228, 234, 255);
+  doc.setFontSize(9);
+  doc.text(o.name || 'Client', margin + 5, boxY + 16);
+  doc.text(o.email || '', margin + 5, boxY + 23);
+  doc.text(s.pickupAddress || s.fromCity || '', margin + 5, boxY + 30);
+
+  /* Order box */
+  doc.setFillColor(20, 35, 72);
+  doc.roundedRect(W - margin - 82, boxY, 82, 36, 3, 3, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8);
+  doc.setTextColor(245, 166, 35);
+  doc.text('ORDERGEGEVENS', W - margin - 77, boxY + 8);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(228, 234, 255);
+  doc.setFontSize(9);
+  doc.text('Order: ' + o.id, W - margin - 77, boxY + 16);
+  doc.text('Vervaldatum: ' + dueDate, W - margin - 77, boxY + 23);
+  doc.text((s.fromCity||'') + ' → ' + (s.toCity||''), W - margin - 77, boxY + 30);
+
+  /* ─ Table header ─ */
+  var tableY = 104;
+  doc.setFillColor(26, 63, 143);
+  doc.rect(margin, tableY, W - margin*2, 10, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('OMSCHRIJVING', margin + 4, tableY + 7);
+  doc.text('STUKS', 120, tableY + 7);
+  doc.text('STUKSPRIJS', 143, tableY + 7);
+  doc.text('TOTAAL', W - margin - 4, tableY + 7, { align:'right' });
+
+  /* ─ Table row ─ */
+  var rowY = tableY + 10;
+  doc.setFillColor(18, 30, 60);
+  doc.rect(margin, rowY, W - margin*2, 14, 'F');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(228, 234, 255);
+  doc.text(s.service || 'LTL Palletvervoer', margin + 4, rowY + 6);
+  doc.setFontSize(8);
+  doc.setTextColor(160, 180, 220);
+  doc.text((s.fromCity||'') + ' → ' + (s.toCity||'') + '  |  ' + (s.weight||'')+'kg  |  '+qty+' pallet(s)', margin + 4, rowY + 11);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(228, 234, 255);
+  doc.text(String(qty), 122, rowY + 8);
+  doc.text('€ ' + unitPrice.toFixed(2), 143, rowY + 8);
+  doc.text('€ ' + subtotal.toFixed(2), W - margin - 4, rowY + 8, { align:'right' });
+
+  /* ─ Totals box ─ */
+  var totY = rowY + 22;
+  doc.setFillColor(20, 35, 72);
+  doc.roundedRect(W - margin - 74, totY, 74, 38, 3, 3, 'F');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(160, 180, 220);
+  doc.text('Subtotaal', W - margin - 70, totY + 9);
+  doc.text('BTW 21%', W - margin - 70, totY + 18);
+  doc.setDrawColor(26, 63, 143);
+  doc.line(W - margin - 70, totY + 22, W - margin - 4, totY + 22);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.setTextColor(245, 166, 35);
+  doc.text('TOTAAL', W - margin - 70, totY + 31);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(228, 234, 255);
+  doc.text('€ ' + subtotal.toFixed(2), W - margin - 4, totY + 9, { align:'right' });
+  doc.text('€ ' + btw.toFixed(2), W - margin - 4, totY + 18, { align:'right' });
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.setTextColor(245, 166, 35);
+  doc.text('€ ' + total.toFixed(2), W - margin - 4, totY + 31, { align:'right' });
+
+  /* ─ Payment info ─ */
+  var payY = totY + 50;
+  doc.setFillColor(20, 35, 72);
+  doc.roundedRect(margin, payY, W - margin*2, 40, 3, 3, 'F');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(9);
+  doc.setTextColor(245, 166, 35);
+  doc.text('BETAALINFORMATIE', margin + 5, payY + 9);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(228, 234, 255);
+  doc.text('Bank: ING Bank  |  IBAN: NL00 INGB 0000 0000 00  |  BIC: INGBNL2A', margin + 5, payY + 18);
+  doc.text('Betaal binnen 14 dagen onder vermelding van: ' + invoiceNr, margin + 5, payY + 26);
+  doc.setTextColor(160, 180, 220);
+  doc.text('PayPal: payments@hexalog.eu  |  Vragen? info@hexalog.eu', margin + 5, payY + 34);
+
+  /* ─ Footer ─ */
+  doc.setFillColor(26, 63, 143);
+  doc.rect(0, 275, W, 22, 'F');
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(160, 180, 220);
+  doc.text('HexaLog · info@hexalog.eu · hexalog.eu · KVK 12345678 · BTW NL123456789B01', W/2, 284, { align:'center' });
+  doc.setTextColor(100, 130, 180);
+  doc.text('Bedankt voor uw vertrouwen in HexaLog — uw partner in Benelux & France logistiek.', W/2, 291, { align:'center' });
+
+  doc.save('HexaLog-Factuur-' + o.id + '.pdf');
+}
+
+/* demo button helper — triggered from invoice demo page */
+function demoInvoice(){ generateInvoice(null); }
 
 /* ── LIVE SHIPMENT COUNTER ── */
 (function(){
